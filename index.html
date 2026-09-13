@@ -1,0 +1,1215 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Ventas Gerisín</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+            --secondary: #64748b;
+            --success: #16a34a;
+            --warning: #d97706;
+            --danger: #dc2626;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text: #0f172a;
+            --border: #e2e8f0;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 10px;
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 900px;
+            background: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            min-height: 90vh;
+        }
+
+        header {
+            background: var(--primary);
+            color: white;
+            padding: 15px 20px;
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 1.4rem;
+            font-weight: 700;
+        }
+
+        .sync-bar {
+            background: #1e293b;
+            color: white;
+            padding: 8px 15px;
+            font-size: 0.85rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border);
+            gap: 5px;
+        }
+
+        .sync-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-weight: 600;
+        }
+
+        .dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background-color: #94a3b8;
+        }
+        .dot.online { background-color: #22c55e; }
+        .dot.offline { background-color: #ef4444; }
+
+        .btn-config {
+            background: transparent;
+            border: 1px solid rgba(255,255,255,0.4);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.75rem;
+        }
+
+        .main-content {
+            padding: 20px;
+            flex: 1;
+        }
+
+        .panel {
+            display: none;
+        }
+        .panel.active {
+            display: block;
+        }
+
+        .home-menu {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-top: 15px;
+            max-width: 500px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .btn-main {
+            padding: 16px 20px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            color: white;
+            transition: transform 0.1s, opacity 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+        .btn-main:active { transform: scale(0.98); }
+        .btn-primary { background: var(--primary); }
+        .btn-summary { background: #0891b2; }
+        .btn-debts { background: var(--warning); }
+        .btn-secondary { background: var(--secondary); }
+        .btn-success { background: var(--success); }
+        .btn-danger { background: var(--danger); }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+        .form-control {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 1rem;
+        }
+
+        .qty-controls {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn-qty {
+            width: 44px;
+            height: 44px;
+            font-size: 1.4rem;
+            font-weight: bold;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            background: #e2e8f0;
+            color: var(--text);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .btn-qty:active {
+            background: #cbd5e1;
+        }
+
+        .tab-bar {
+            display: flex;
+            border-bottom: 2px solid var(--border);
+            margin-bottom: 15px;
+        }
+        .tab-btn {
+            flex: 1;
+            padding: 10px;
+            text-align: center;
+            background: none;
+            border: none;
+            font-weight: 600;
+            color: var(--secondary);
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+        }
+        .tab-btn.active {
+            color: var(--primary);
+            border-color: var(--primary);
+        }
+
+        .card {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        .card-title {
+            font-weight: 700;
+            font-size: 1rem;
+        }
+        .badge {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: white;
+        }
+        .badge-success { background: var(--success); }
+        .badge-warning { background: var(--warning); }
+        .badge-danger { background: var(--danger); }
+
+        .card-body {
+            font-size: 0.9rem;
+            color: #475569;
+            display: grid;
+            gap: 4px;
+        }
+
+        .card-actions {
+            margin-top: 10px;
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .checkbox-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5);
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 15px;
+        }
+        .modal.active {
+            display: flex;
+        }
+        .modal-content {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            width: 100%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .back-btn {
+            background: none;
+            border: none;
+            color: var(--primary);
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            margin-bottom: 15px;
+        }
+
+        .action-bar-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .summary-box {
+            background: #f1f5f9;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 15px;
+        }
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 4px 0;
+            font-size: 0.95rem;
+        }
+        .summary-row.total {
+            border-top: 1px solid #cbd5e1;
+            font-weight: 700;
+            margin-top: 5px;
+            padding-top: 8px;
+        }
+
+        .sale-item-btn {
+            background: white;
+            border: 2px solid var(--primary);
+            border-radius: 8px;
+            padding: 12px 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            font-weight: 600;
+            color: var(--text);
+            text-align: left;
+        }
+
+        .expense-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px;
+            background: #f1f5f9;
+            border-radius: 6px;
+            margin-bottom: 6px;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+
+<datalist id="clientsDatalist"></datalist>
+
+<div class="app-container">
+    <header>
+        <h1>Sistema de Ventas Gerisín</h1>
+    </header>
+
+    <div class="sync-bar">
+        <div class="sync-badge">
+            <span id="syncDot" class="dot offline"></span>
+            <span id="syncStatus">Modo Local</span>
+        </div>
+        <div>
+            <button class="btn-config" style="background:#0284c7;" onclick="fetchFromSheets()">📥 Cargar desde Sheet</button>
+            <button class="btn-config" onclick="verifyPinAndOpenConfig()">⚙️ Config</button>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <!-- 1. PANEL PRINCIPAL (HOME) -->
+        <div id="panelHome" class="panel active">
+            <div class="home-menu">
+                <button class="btn-main btn-primary" onclick="openNewSaleConfig()">
+                    ➕ Abrir una Nueva Venta
+                </button>
+                <button class="btn-main btn-summary" onclick="openSummaryPanel()">
+                    📊 Resumen de Venta por Caja
+                </button>
+                <button class="btn-main btn-debts" onclick="openDebtsPanel()">
+                    💳 Control de Deudas
+                </button>
+            </div>
+
+            <div style="margin-top: 30px;">
+                <h3 style="margin-bottom: 12px; color: var(--primary);">🔥 Ventas / Eventos Activos</h3>
+                <div id="openSalesList" style="display: flex; flex-direction: column; gap: 10px;"></div>
+            </div>
+        </div>
+
+        <!-- 2. CONFIGURAR NUEVA VENTA -->
+        <div id="panelNewSaleConfig" class="panel">
+            <button class="back-btn" onclick="showPanel('panelHome')">← Volver al Menú Principal</button>
+            <h2 style="margin-bottom: 15px;">Abrir Nueva Venta / Evento</h2>
+            <form id="formNewSale" onsubmit="handleStartSale(event)">
+                <div class="form-group">
+                    <label>Título de la Venta / Producto</label>
+                    <input type="text" id="saleTitle" class="form-control" placeholder="Ej. Empanadas" required>
+                </div>
+                <div class="form-group">
+                    <label>Precio Unitario ($ MXN)</label>
+                    <input type="number" id="salePrice" class="form-control" step="0.5" placeholder="12.00" required>
+                </div>
+                <div class="form-group">
+                    <label>Fecha de la Venta</label>
+                    <input type="date" id="saleDate" class="form-control" required>
+                </div>
+                <button type="submit" class="btn-main btn-success" style="width: 100%;">Comenzar Venta</button>
+            </form>
+        </div>
+
+        <!-- 3. PANTALLA DE TRABAJO DE VENTA ACTIVA -->
+        <div id="panelActiveSale" class="panel">
+            <div class="action-bar-top">
+                <button class="back-btn" onclick="showPanel('panelHome')">← Menú Principal</button>
+                <h3 id="activeSaleTitle" style="color: var(--primary);">Venta Activa</h3>
+            </div>
+
+            <div class="action-bar-top">
+                <button class="btn-config" style="background: #475569; color: white;" onclick="openExpensesModal()">💸 Registrar / Ver Gastos</button>
+                <button class="btn-config" style="background: #0284c7; color: white;" onclick="showCurrentSaleReport()">📋 Informe de esta Venta</button>
+            </div>
+
+            <!-- FORMULARIO DE NUEVO PEDIDO / EDICION -->
+            <div class="card" style="background: #f8fafc; border: 2px dashed var(--primary); margin-bottom: 20px;">
+                <h4 id="formOrderHeading" style="margin-bottom: 10px;">➕ Capturar Nuevo Pedido</h4>
+                <form id="formOrder" onsubmit="handleSaveOrder(event)">
+                    <input type="hidden" id="editingOrderId" value="">
+                    
+                    <div class="form-group">
+                        <label>Nombre del Cliente</label>
+                        <input type="text" id="clientName" list="clientsDatalist" class="form-control" placeholder="Seleccionar o escribir cliente..." oninput="autoFillPhoneByName()" required>
+                    </div>
+                    <div class="form-group">
+                        <label>WhatsApp (Opcional)</label>
+                        <input type="tel" id="clientPhone" class="form-control" placeholder="9931234567 (Opcional)">
+                    </div>
+                    <div class="form-group">
+                        <label>Cantidad de Pedido</label>
+                        <div class="qty-controls">
+                            <button type="button" class="btn-qty" onclick="changeQty(-1)">-</button>
+                            <input type="number" id="orderQty" class="form-control" min="1" value="1" style="text-align: center; font-weight: bold; font-size: 1.2rem;" onchange="updateCalculatedTotal()" onkeyup="updateCalculatedTotal()" required>
+                            <button type="button" class="btn-qty" onclick="changeQty(1)">+</button>
+                        </div>
+                    </div>
+                    <div style="background: #e2e8f0; padding: 8px; border-radius: 6px; margin-bottom: 10px; font-weight: bold;">
+                        Total Calculado: $<span id="calculatedTotal">0.00</span>
+                    </div>
+                    <div class="form-group">
+                        <label>Forma de Pago</label>
+                        <select id="paymentStatus" class="form-control" onchange="toggleAbonoField()">
+                            <option value="Pagado">🟢 Pagado (Completo)</option>
+                            <option value="Abonó">🟡 Abonó (Parcial)</option>
+                            <option value="Debe">🔴 Debe (Pendiente total)</option>
+                        </select>
+                    </div>
+                    <div class="form-group" id="abonoGroup" style="display: none;">
+                        <label>Monto Abonado ($)</label>
+                        <input type="number" id="abonoAmount" class="form-control" step="0.5" value="0">
+                    </div>
+                    <div style="display: flex; gap: 8px;">
+                        <button type="submit" id="btnSaveOrderSubmit" class="btn-main btn-success" style="flex: 1; padding: 12px;">💾 Guardar Pedido</button>
+                        <button type="button" id="btnCancelEdit" class="btn-main btn-secondary" style="display: none; padding: 12px;" onclick="resetOrderForm()">Cancelar</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- TABS PENDIENTES / ENTREGADOS -->
+            <div class="tab-bar">
+                <button class="tab-btn active" onclick="switchOrderTab('pending')">📦 Pendientes (<span id="countPending">0</span>)</button>
+                <button class="tab-btn" onclick="switchOrderTab('delivered')">✅ Entregados (<span id="countDelivered">0</span>)</button>
+            </div>
+
+            <div id="listPendingOrders"></div>
+            <div id="listDeliveredOrders" style="display: none;"></div>
+        </div>
+
+        <!-- 4. CONTROL DE DEUDAS -->
+        <div id="panelDebts" class="panel">
+            <button class="back-btn" onclick="showPanel('panelHome')">← Volver al Menú Principal</button>
+            <h2 style="margin-bottom: 15px;">💳 Control de Deudas por Cliente</h2>
+            <div id="debtsContainer"></div>
+        </div>
+
+        <!-- 5. RESUMEN DE VENTA POR CAJA -->
+        <div id="panelSummary" class="panel">
+            <button class="back-btn" onclick="showPanel('panelHome')">← Volver al Menú Principal</button>
+            <h2 style="margin-bottom: 15px;">📊 Resumen de Venta por Caja</h2>
+            <div class="form-group">
+                <label>Seleccionar Evento / Venta:</label>
+                <select id="summarySaleSelect" class="form-control" onchange="renderSummaryDetails()">
+                    <option value="ALL">🌐 Consolidado Global (Todas las ventas)</option>
+                </select>
+            </div>
+            <div id="summaryDetailsContainer"></div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL CONFIGURACION -->
+<div id="modalConfig" class="modal">
+    <div class="modal-content">
+        <h3>Configuración de Google Sheets</h3>
+        <div class="form-group" style="margin-top: 10px;">
+            <label>URL del Web App (Apps Script):</label>
+            <input type="url" id="sheetsWebUrl" class="form-control" placeholder="https://script.google.com/macros/s/.../exec">
+        </div>
+        <button class="btn-main btn-primary" style="width: 100%; padding: 10px;" onclick="saveConfig()">Guardar Configuración</button>
+        <button class="btn-main btn-secondary" style="width: 100%; padding: 8px; margin-top: 8px;" onclick="fetchFromSheets()">📥 Descargar Datos del Sheet</button>
+        <button class="btn-main btn-secondary" style="width: 100%; margin-top: 10px; padding: 8px;" onclick="closeModal('modalConfig')">Cerrar</button>
+    </div>
+</div>
+
+<!-- MODAL GASTOS -->
+<div id="modalExpenses" class="modal">
+    <div class="modal-content">
+        <h3>💸 Gastos de esta Venta</h3>
+        <form onsubmit="handleSaveExpense(event)" style="margin-top: 10px;">
+            <div class="form-group">
+                <label>Descripción del Gasto</label>
+                <input type="text" id="expenseDesc" class="form-control" placeholder="Ej. Bolsas, desechables, aceite" required>
+            </div>
+            <div class="form-group">
+                <label>Monto Gastado ($)</label>
+                <input type="number" id="expenseAmount" class="form-control" step="0.5" placeholder="0.00" required>
+            </div>
+            <button type="submit" class="btn-main btn-success" style="width: 100%; padding: 10px;">+ Agregar Gasto</button>
+        </form>
+
+        <hr style="margin: 15px 0;">
+        <h4 style="margin-bottom: 8px;">Gastos Realizados:</h4>
+        <div id="modalExpensesList"></div>
+
+        <button type="button" class="btn-main btn-secondary" style="width: 100%; margin-top: 15px; padding: 8px;" onclick="closeModal('modalExpenses')">Cerrar Ventana</button>
+    </div>
+</div>
+
+<!-- MODAL INFORME -->
+<div id="modalReport" class="modal">
+    <div class="modal-content">
+        <h3 id="reportTitle">Informe de Venta</h3>
+        <div id="reportContent" style="margin: 15px 0;"></div>
+        <button class="btn-main btn-secondary" style="width: 100%; padding: 8px;" onclick="closeModal('modalReport')">Cerrar</button>
+    </div>
+</div>
+
+<script>
+    let db = {
+        config: { scriptUrl: '' },
+        sales: [],
+        orders: [],
+        expenses: []
+    };
+
+    let currentSaleId = null;
+
+    window.onload = function() {
+        loadLocalStorage();
+        updateSyncStatus();
+        setTodayDate();
+        renderOpenSalesList();
+        updateClientsDatalist();
+        if (db.config.scriptUrl) fetchFromSheets();
+    };
+
+    function setTodayDate() {
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('saleDate').value = today;
+    }
+
+    function loadLocalStorage() {
+        const data = localStorage.getItem('gerisin_sales_db');
+        if (data) {
+            try { db = JSON.parse(data); } catch(e){}
+        }
+        if (db.config && db.config.scriptUrl) {
+            document.getElementById('sheetsWebUrl').value = db.config.scriptUrl;
+        }
+    }
+
+    function saveLocalStorage() {
+        localStorage.setItem('gerisin_sales_db', JSON.stringify(db));
+        updateClientsDatalist();
+    }
+
+    function updateSyncStatus() {
+        const dot = document.getElementById('syncDot');
+        const status = document.getElementById('syncStatus');
+        if (db.config.scriptUrl && db.config.scriptUrl.length > 10) {
+            dot.className = "dot online";
+            status.innerText = "Sincronizado";
+        } else {
+            dot.className = "dot offline";
+            status.innerText = "Modo Local";
+        }
+    }
+
+    // LEER Y SINCRONIZAR DATOS DESDE GOOGLE SHEETS
+    function fetchFromSheets() {
+        if (!db.config.scriptUrl) return;
+        fetch(db.config.scriptUrl)
+            .then(res => res.json())
+            .then(data => {
+                if (data.sales && data.orders) {
+                    db.sales = data.sales;
+                    db.orders = data.orders;
+                    db.expenses = data.expenses || [];
+                    saveLocalStorage();
+                    renderOpenSalesList();
+                    if (currentSaleId) renderOrdersList();
+                }
+            })
+            .catch(err => console.log('Error descargando de Sheets:', err));
+    }
+
+    function updateClientsDatalist() {
+        const datalist = document.getElementById('clientsDatalist');
+        const clientMap = {};
+        
+        db.orders.forEach(o => {
+            if (o.client) {
+                const nameKey = o.client.trim();
+                if (!clientMap[nameKey]) clientMap[nameKey] = o.phone || '';
+            }
+        });
+
+        const names = Object.keys(clientMap).sort();
+        datalist.innerHTML = names.map(name => `<option value="${name}">`).join('');
+    }
+
+    function autoFillPhoneByName() {
+        const inputName = document.getElementById('clientName').value.trim();
+        if (!inputName) return;
+        const match = db.orders.find(o => o.client.toLowerCase().trim() === inputName.toLowerCase() && o.phone);
+        if (match && match.phone) {
+            document.getElementById('clientPhone').value = match.phone;
+        }
+    }
+
+    function verifyPinAndOpenConfig() {
+        const pin = prompt("Ingresa el código PIN para acceder a la configuración de Google Sheets:");
+        if (pin === "4321") {
+            openModal('modalConfig');
+        } else if (pin !== null) {
+            alert("❌ Código PIN incorrecto.");
+        }
+    }
+
+    function showPanel(panelId) {
+        document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+        document.getElementById(panelId).classList.add('active');
+        if (panelId === 'panelHome') {
+            renderOpenSalesList();
+        }
+    }
+
+    function openModal(modalId) {
+        document.getElementById(modalId).classList.add('active');
+    }
+    function closeModal(modalId) {
+        document.getElementById(modalId).classList.remove('active');
+    }
+
+    function saveConfig() {
+        const url = document.getElementById('sheetsWebUrl').value.trim();
+        db.config.scriptUrl = url;
+        saveLocalStorage();
+        updateSyncStatus();
+        closeModal('modalConfig');
+        fetchFromSheets();
+    }
+
+    function syncItem(payload) {
+        if (!db.config.scriptUrl) return;
+        fetch(db.config.scriptUrl, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        }).catch(err => console.log('Sync error:', err));
+    }
+
+    function renderOpenSalesList() {
+        const container = document.getElementById('openSalesList');
+        if (db.sales.length === 0) {
+            container.innerHTML = '<p style="color:#64748b; font-size:0.9rem;">No hay ventas abiertas actualmente.</p>';
+            return;
+        }
+
+        container.innerHTML = db.sales.map(s => {
+            const saleOrders = db.orders.filter(o => o.saleId === s.id);
+            const pendingQty = saleOrders.filter(o => !o.delivered).length;
+            return `
+                <div class="sale-item-btn" onclick="openExistingSale('${s.id}')">
+                    <div>
+                        <div style="font-size:1.05rem;">🏷️ <b>${s.title}</b> ($${s.price.toFixed(2)})</div>
+                        <div style="font-size:0.8rem; color:#64748b;">📅 ${s.date} | Pedidos: ${saleOrders.length} (${pendingQty} pendientes)</div>
+                    </div>
+                    <span style="color:var(--primary); font-size:1.2rem;">➔</span>
+                </div>
+            `;
+        }).join('');
+    }
+
+    function openExistingSale(saleId) {
+        currentSaleId = saleId;
+        loadActiveSaleScreen();
+    }
+
+    function openNewSaleConfig() {
+        setTodayDate();
+        document.getElementById('saleTitle').value = '';
+        document.getElementById('salePrice').value = '';
+        showPanel('panelNewSaleConfig');
+    }
+
+    function handleStartSale(e) {
+        e.preventDefault();
+        const title = document.getElementById('saleTitle').value.trim();
+        const price = parseFloat(document.getElementById('salePrice').value);
+        const date = document.getElementById('saleDate').value;
+
+        const newSale = {
+            id: 'SALE_' + Date.now(),
+            title: title,
+            price: price,
+            date: date
+        };
+
+        db.sales.push(newSale);
+        saveLocalStorage();
+        syncItem({ type: 'SALE', ...newSale });
+
+        currentSaleId = newSale.id;
+        loadActiveSaleScreen();
+    }
+
+    function loadActiveSaleScreen() {
+        const sale = db.sales.find(s => s.id === currentSaleId);
+        if (!sale) return;
+        document.getElementById('activeSaleTitle').innerText = `${sale.title} ($${sale.price.toFixed(2)}) - ${sale.date}`;
+        resetOrderForm();
+        renderOrdersList();
+        showPanel('panelActiveSale');
+    }
+
+    function changeQty(delta) {
+        const input = document.getElementById('orderQty');
+        let current = parseInt(input.value) || 1;
+        current += delta;
+        if (current < 1) current = 1;
+        input.value = current;
+        updateCalculatedTotal();
+    }
+
+    function updateCalculatedTotal() {
+        const sale = db.sales.find(s => s.id === currentSaleId);
+        if (!sale) return;
+        const qty = parseInt(document.getElementById('orderQty').value) || 0;
+        const total = qty * sale.price;
+        document.getElementById('calculatedTotal').innerText = total.toFixed(2);
+    }
+
+    function toggleAbonoField() {
+        const status = document.getElementById('paymentStatus').value;
+        const group = document.getElementById('abonoGroup');
+        group.style.display = status === 'Abonó' ? 'block' : 'none';
+    }
+
+    function handleSaveOrder(e) {
+        e.preventDefault();
+        const sale = db.sales.find(s => s.id === currentSaleId);
+        const editingId = document.getElementById('editingOrderId').value;
+        const client = document.getElementById('clientName').value.trim();
+        const phone = document.getElementById('clientPhone').value.trim();
+        const qty = parseInt(document.getElementById('orderQty').value);
+        const total = qty * sale.price;
+        const status = document.getElementById('paymentStatus').value;
+        let abono = 0;
+
+        if (status === 'Pagado') abono = total;
+        else if (status === 'Abonó') abono = parseFloat(document.getElementById('abonoAmount').value) || 0;
+        else if (status === 'Debe') abono = 0;
+
+        const debt = Math.max(0, total - abono);
+
+        if (editingId) {
+            const order = db.orders.find(o => o.id === editingId);
+            if (order) {
+                order.client = client;
+                order.phone = phone;
+                order.qty = qty;
+                order.total = total;
+                order.status = status;
+                order.abono = abono;
+                order.debt = debt;
+                syncItem({ type: 'ORDER', ...order });
+            }
+        } else {
+            const newOrder = {
+                id: 'ORD_' + Date.now(),
+                saleId: currentSaleId,
+                client: client,
+                phone: phone,
+                qty: qty,
+                total: total,
+                status: status,
+                abono: abono,
+                debt: debt,
+                delivered: false
+            };
+            db.orders.push(newOrder);
+            syncItem({ type: 'ORDER', ...newOrder });
+        }
+
+        saveLocalStorage();
+        resetOrderForm();
+        renderOrdersList();
+    }
+
+    function editOrder(orderId) {
+        const order = db.orders.find(o => o.id === orderId);
+        if (!order) return;
+
+        document.getElementById('editingOrderId').value = order.id;
+        document.getElementById('clientName').value = order.client;
+        document.getElementById('clientPhone').value = order.phone || '';
+        document.getElementById('orderQty').value = order.qty;
+        document.getElementById('paymentStatus').value = order.status;
+        toggleAbonoField();
+        if (order.status === 'Abonó') {
+            document.getElementById('abonoAmount').value = order.abono;
+        }
+
+        updateCalculatedTotal();
+        document.getElementById('formOrderHeading').innerText = '✏️ Editar Pedido';
+        document.getElementById('btnSaveOrderSubmit').innerText = '💾 Actualizar Pedido';
+        document.getElementById('btnCancelEdit').style.display = 'block';
+        document.getElementById('formOrder').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function resetOrderForm() {
+        document.getElementById('editingOrderId').value = '';
+        document.getElementById('formOrder').reset();
+        document.getElementById('orderQty').value = 1;
+        document.getElementById('formOrderHeading').innerText = '➕ Capturar Nuevo Pedido';
+        document.getElementById('btnSaveOrderSubmit').innerText = '💾 Guardar Pedido';
+        document.getElementById('btnCancelEdit').style.display = 'none';
+        updateCalculatedTotal();
+        toggleAbonoField();
+    }
+
+    function sendOrderNotification(orderId) {
+        const order = db.orders.find(o => o.id === orderId);
+        if (!order) return;
+        const sale = db.sales.find(s => s.id === order.saleId);
+        if (!sale) return;
+
+        let msg = `Hola *${order.client}*, hemos registrado tu pedido de *${sale.title}*:\n\n`;
+        msg += `• Cantidad: ${order.qty} pzs x $${sale.price.toFixed(2)} = Total: $${order.total.toFixed(2)}\n`;
+        msg += `• Estado de Pago: ${order.status}\n`;
+        if (order.status === 'Abonó') msg += `• Abonado: $${order.abono.toFixed(2)} (Pendiente: $${order.debt.toFixed(2)})\n`;
+        if (order.status === 'Debe') msg += `• Saldo pendiente: $${order.debt.toFixed(2)}\n`;
+        msg += `\n*Te avisaremos tan pronto como tu pedido esté listo / sea enviado.* ¡Muchas gracias por tu compra!`;
+
+        const cleanPhone = order.phone ? order.phone.replace(/\D/g, '') : '';
+        const url = cleanPhone ? `https://wa.me/52${cleanPhone}?text=${encodeURIComponent(msg)}` : `https://wa.me/?text=${encodeURIComponent(msg)}`;
+        window.open(url, '_blank');
+    }
+
+    function switchOrderTab(tab) {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        if (tab === 'pending') {
+            document.querySelectorAll('.tab-btn')[0].classList.add('active');
+            document.getElementById('listPendingOrders').style.display = 'block';
+            document.getElementById('listDeliveredOrders').style.display = 'none';
+        } else {
+            document.querySelectorAll('.tab-btn')[1].classList.add('active');
+            document.getElementById('listPendingOrders').style.display = 'none';
+            document.getElementById('listDeliveredOrders').style.display = 'block';
+        }
+    }
+
+    function toggleDeliveryStatus(orderId) {
+        const order = db.orders.find(o => o.id === orderId);
+        if (order) {
+            order.delivered = !order.delivered;
+            saveLocalStorage();
+            syncItem({ type: 'ORDER', ...order });
+            renderOrdersList();
+        }
+    }
+
+    function renderOrdersList() {
+        const pendingContainer = document.getElementById('listPendingOrders');
+        const deliveredContainer = document.getElementById('listDeliveredOrders');
+
+        const activeOrders = db.orders.filter(o => o.saleId === currentSaleId);
+        const pending = activeOrders.filter(o => !o.delivered);
+        const delivered = activeOrders.filter(o => o.delivered);
+
+        document.getElementById('countPending').innerText = pending.length;
+        document.getElementById('countDelivered').innerText = delivered.length;
+
+        const renderCard = (o) => {
+            let badgeClass = 'badge-success';
+            if (o.status === 'Abonó') badgeClass = 'badge-warning';
+            if (o.status === 'Debe') badgeClass = 'badge-danger';
+
+            return `
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title">${o.client}</span>
+                        <span class="badge ${badgeClass}">${o.status}</span>
+                    </div>
+                    <div class="card-body">
+                        <div>📦 Pedido: <b>${o.qty} pzs</b> ($${o.total.toFixed(2)})</div>
+                        <div>💵 Abonado: $${o.abono.toFixed(2)} | Pendiente: <b>$${o.debt.toFixed(2)}</b></div>
+                        ${o.phone ? `<div>📱 Tel: ${o.phone}</div>` : ''}
+                    </div>
+                    <div class="card-actions">
+                        <label class="checkbox-container">
+                            <input type="checkbox" ${o.delivered ? 'checked' : ''} onchange="toggleDeliveryStatus('${o.id}')">
+                            Entregado
+                        </label>
+                        <button type="button" class="btn-main btn-secondary" style="padding: 6px 10px; font-size: 0.8rem; background: #64748b; margin-left: auto;" onclick="editOrder('${o.id}')">
+                            ✏️ Editar
+                        </button>
+                        <button type="button" class="btn-main btn-primary" style="padding: 6px 10px; font-size: 0.8rem; background: #25d366;" onclick="sendOrderNotification('${o.id}')">
+                            📲 Notificar
+                        </button>
+                    </div>
+                </div>
+            `;
+        };
+
+        pendingContainer.innerHTML = pending.length ? pending.map(renderCard).join('') : '<p style="color:#64748b;">No hay pedidos pendientes.</p>';
+        deliveredContainer.innerHTML = delivered.length ? delivered.map(renderCard).join('') : '<p style="color:#64748b;">No hay pedidos entregados.</p>';
+    }
+
+    function openExpensesModal() {
+        renderModalExpensesList();
+        openModal('modalExpenses');
+    }
+
+    function handleSaveExpense(e) {
+        e.preventDefault();
+        const desc = document.getElementById('expenseDesc').value.trim();
+        const amount = parseFloat(document.getElementById('expenseAmount').value);
+
+        const newExpense = {
+            id: 'EXP_' + Date.now(),
+            saleId: currentSaleId,
+            desc: desc,
+            amount: amount
+        };
+
+        db.expenses.push(newExpense);
+        saveLocalStorage();
+        syncItem({ type: 'EXPENSE', ...newExpense });
+
+        document.getElementById('expenseDesc').value = '';
+        document.getElementById('expenseAmount').value = '';
+        renderModalExpensesList();
+    }
+
+    function renderModalExpensesList() {
+        const container = document.getElementById('modalExpensesList');
+        const activeExpenses = db.expenses.filter(e => e.saleId === currentSaleId);
+
+        if (activeExpenses.length === 0) {
+            container.innerHTML = '<p style="color:#64748b; font-size:0.85rem;">No hay gastos registrados en esta venta.</p>';
+            return;
+        }
+
+        let total = 0;
+        let html = activeExpenses.map(e => {
+            total += e.amount;
+            return `
+                <div class="expense-item">
+                    <span>${e.desc}</span>
+                    <b>$${e.amount.toFixed(2)}</b>
+                </div>
+            `;
+        }).join('');
+
+        html += `
+            <div style="text-align:right; font-weight:bold; margin-top:8px; color:var(--danger);">
+                Total Gastos: $${total.toFixed(2)}
+            </div>
+        `;
+
+        container.innerHTML = html;
+    }
+
+    function showCurrentSaleReport() {
+        const sale = db.sales.find(s => s.id === currentSaleId);
+        const orders = db.orders.filter(o => o.saleId === currentSaleId);
+        const expenses = db.expenses.filter(e => e.saleId === currentSaleId);
+
+        let totalQty = 0;
+        let totalBruto = 0;
+        let totalCobrado = 0;
+        let totalDeudas = 0;
+
+        orders.forEach(o => {
+            totalQty += o.qty;
+            totalBruto += o.total;
+            totalCobrado += o.abono;
+            totalDeudas += o.debt;
+        });
+
+        let totalGastos = 0;
+        expenses.forEach(e => totalGastos += e.amount);
+
+        const gananciaNeta = totalBruto - totalGastos;
+
+        document.getElementById('reportTitle').innerText = `Informe: ${sale.title}`;
+        document.getElementById('reportContent').innerHTML = `
+            <div class="summary-box">
+                <div class="summary-row"><span>Fecha:</span> <b>${sale.date}</b></div>
+                <div class="summary-row"><span>Precio Unitario:</span> <b>$${sale.price.toFixed(2)}</b></div>
+                <div class="summary-row"><span>Productos Vendidos:</span> <b>${totalQty} pzs</b></div>
+                <div class="summary-row"><span>Ventas Brutas Totales:</span> <b>$${totalBruto.toFixed(2)}</b></div>
+                <div class="summary-row"><span>Efectivo/Abonado Cobrado:</span> <b style="color:var(--success);">$${totalCobrado.toFixed(2)}</b></div>
+                <div class="summary-row"><span>Pendiente por Cobrar (Deudas):</span> <b style="color:var(--danger);">$${totalDeudas.toFixed(2)}</b></div>
+                <div class="summary-row"><span>Total de Gastos:</span> <b style="color:var(--warning);">$${totalGastos.toFixed(2)}</b></div>
+                <div class="summary-row total"><span>GANANCIA NETA:</span> <b>$${gananciaNeta.toFixed(2)}</b></div>
+            </div>
+        `;
+        openModal('modalReport');
+    }
+
+    function openDebtsPanel() {
+        showPanel('panelDebts');
+        renderDebts();
+    }
+
+    function renderDebts() {
+        const container = document.getElementById('debtsContainer');
+        const debtorMap = {};
+
+        db.orders.forEach(o => {
+            if (o.debt > 0) {
+                const key = o.client.toLowerCase().trim();
+                if (!debtorMap[key]) {
+                    debtorMap[key] = {
+                        clientName: o.client,
+                        phone: o.phone,
+                        items: []
+                    };
+                }
+                const sale = db.sales.find(s => s.id === o.saleId) || { title: 'Venta', price: 0, date: '' };
+                debtorMap[key].items.push({
+                    saleTitle: sale.title,
+                    price: sale.price,
+                    date: sale.date,
+                    qty: o.qty,
+                    total: o.total,
+                    abono: o.abono,
+                    debt: o.debt
+                });
+            }
+        });
+
+        const keys = Object.keys(debtorMap);
+        if (keys.length === 0) {
+            container.innerHTML = '<p style="color:#64748b;">🎉 ¡Excelente! No hay clientes con deudas pendientes.</p>';
+            return;
+        }
+
+        let html = '';
+        keys.forEach(k => {
+            const debtor = debtorMap[k];
+            let totalDebt = 0;
+            let itemsHtml = '';
+
+            debtor.items.forEach(item => {
+                totalDebt += item.debt;
+                itemsHtml += `
+                    <div style="font-size:0.85rem; border-left:3px solid var(--warning); padding-left:8px; margin:4px 0;">
+                        <b>• ${item.saleTitle}</b> (${item.date})<br>
+                        Cantidad: ${item.qty} pzs x $${item.price.toFixed(2)} = Subtotal: $${item.total.toFixed(2)}<br>
+                        Abonado: $${item.abono.toFixed(2)} | <span style="color:var(--danger); font-weight:bold;">Debe: $${item.debt.toFixed(2)}</span>
+                    </div>
+                `;
+            });
+
+            html += `
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title">${debtor.clientName}</span>
+                        <span class="badge badge-danger">Deuda Total: $${totalDebt.toFixed(2)}</span>
+                    </div>
+                    <div class="card-body">
+                        ${itemsHtml}
+                    </div>
+                    <div class="card-actions" style="margin-top:12px;">
+                        <button class="btn-main btn-primary" style="padding:8px 12px; font-size:0.85rem; background:#25d366;" onclick="sendDebtReminderWhatsApp('${k}')">
+                            📲 Recordar Deuda por WhatsApp
+                        </button>
+                    </div>
+                </div>
+            `;
+        });
+
+        container.innerHTML = html;
+    }
+
+    function sendDebtReminderWhatsApp(debtorKey) {
+        const debtorMap = {};
+        db.orders.forEach(o => {
+            if (o.debt > 0) {
+                const key = o.client.toLowerCase().trim();
+                if (!debtorMap[key]) {
+                    debtorMap[key] = { clientName: o.client, phone: o.phone, items: [] };
+                }
+                const sale = db.sales.find(s => s.id === o.saleId) || { title: 'Venta', price: 0, date: '' };
+                debtorMap[key].items.push({
+                    saleTitle: sale.title,
+                    price: sale.price,
+                    date: sale.date,
+                    qty: o.qty,
+                    total: o.total,
+                    abono: o.abono,
+                    debt: o.debt
+                });
+            }
+        });
+
+        const debtor = debtorMap[debtorKey];
+        if (!debtor) return;
+
+        let totalConsumo = 0;
+        let totalAbonado = 0;
+        let totalPendiente = 0;
+
+        let msg = `Hola *${debtor.clientName}*, te saludamos de *Sistema de Ventas Gerisín*.\n`;
+        msg += `Te compartimos el detalle de tu saldo pendiente:\n\n`;
+
+        debtor.items.forEach(item => {
+            totalConsumo += item.total;
+            totalAbonado += item.abono;
+            totalPendiente += item.debt;
+
+            msg += `• *${item.saleTitle}* (Fecha: ${item.date})\n`;
+            msg += `   Cantidad: ${item.qty} pzs x $${item.price.toFixed(2)} c/u = Subtotal: $${item.total.toFixed(2)}\n`;
+            if (item.abono > 0) msg += `   Abonado: $${item.abono.toFixed(2)}\n`;
+            msg += `   Pendiente: $${item.debt.toFixed(2)}\n\n`;
+        });
+
+        msg += `------------------------------------\n`;
+        msg += `Total de compras: $${totalConsumo.toFixed(2)}\n`;
+        msg += `Total Abonado: $${totalAbonado.toFixed(2)}\n`;
+        msg += `*SALDO PENDIENTE A PAGAR: $${totalPendiente.toFixed(2)}*\n\n`;
+        msg += `¡Agradecemos mucho tu pago!`;
+
+        const cleanPhone = debtor.phone ? debtor.phone.replace(/\D/g, '') : '';
+        const url = cleanPhone ? `https://wa.me/52${cleanPhone}?text=${encodeURIComponent(msg)}` : `https://wa.me/?text=${encodeURIComponent(msg)}`;
+        window.open(url, '_blank');
+    }
+
+    function openSummaryPanel() {
+        showPanel('panelSummary');
+        const select = document.getElementById('summarySaleSelect');
+        select.innerHTML = '<option value="ALL">🌐 Consolidado Global (Todas las ventas)</option>';
+        db.sales.forEach(s => {
+            select.innerHTML += `<option value="${s.id}">${s.title} (${s.date})</option>`;
+        });
+        renderSummaryDetails();
+    }
+
+    function renderSummaryDetails() {
+        const selectValue = document.getElementById('summarySaleSelect').value;
+        const container = document.getElementById('summaryDetailsContainer');
+
+        let targetSales = db.sales;
+        if (selectValue !== 'ALL') {
+            targetSales = db.sales.filter(s => s.id === selectValue);
+        }
+
+        let totalQty = 0;
+        let totalBruto = 0;
+        let totalCobrado = 0;
+        let totalDeudas = 0;
+        let totalGastos = 0;
+
+        targetSales.forEach(s => {
+            const orders = db.orders.filter(o => o.saleId === s.id);
+            const expenses = db.expenses.filter(e => e.saleId === s.id);
+
+            orders.forEach(o => {
+                totalQty += o.qty;
+                totalBruto += o.total;
+                totalCobrado += o.abono;
+                totalDeudas += o.debt;
+            });
+
+            expenses.forEach(e => totalGastos += e.amount);
+        });
+
+        const gananciaNeta = totalBruto - totalGastos;
+
+        container.innerHTML = `
+            <div class="summary-box">
+                <div class="summary-row"><span>Total de Eventos / Ventas:</span> <b>${targetSales.length}</b></div>
+                <div class="summary-row"><span>Cantidad de Productos Vendidos:</span> <b>${totalQty} pzs</b></div>
+                <div class="summary-row"><span>Total de Ventas Brutas:</span> <b>$${totalBruto.toFixed(2)}</b></div>
+                <div class="summary-row"><span>Dinero Cobrado en Caja:</span> <b style="color:var(--success);">$${totalCobrado.toFixed(2)}</b></div>
+                <div class="summary-row"><span>Deudas por Cobrar:</span> <b style="color:var(--danger);">$${totalDeudas.toFixed(2)}</b></div>
+                <div class="summary-row"><span>Gastos Totales:</span> <b style="color:var(--warning);">$${totalGastos.toFixed(2)}</b></div>
+                <div class="summary-row total"><span>GANANCIA NETA TOTAL:</span> <b>$${gananciaNeta.toFixed(2)}</b></div>
+            </div>
+        `;
+    }
+</script>
+
+</body>
+</html>
