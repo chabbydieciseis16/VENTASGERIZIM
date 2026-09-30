@@ -4,18 +4,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistema de Ventas Gerisín</title>
+    <!-- Librería para generar imagen de ticket -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         :root {
-            --primary: #2563eb;
-            --primary-dark: #1d4ed8;
-            --secondary: #64748b;
-            --success: #16a34a;
-            --warning: #d97706;
-            --danger: #dc2626;
-            --bg: #f8fafc;
-            --card-bg: #ffffff;
-            --text: #0f172a;
-            --border: #e2e8f0;
+            --primary: #5c4033;
+            --primary-dark: #3b2820;
+            --secondary: #8c786b;
+            --bg: #f5f2eb;
+            --card-bg: #fffdf9;
+            --card-border: #e6dfd5;
+            --text: #2c221e;
+            --text-light: #6e6057;
+            --accent-success: #386641;
+            --accent-warning: #b56576;
+            --accent-danger: #9a031e;
+            --beige-dark: #e8e1d5;
         }
 
         * {
@@ -39,16 +43,17 @@
             max-width: 900px;
             background: var(--card-bg);
             border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            box-shadow: 0 4px 15px rgba(60, 40, 30, 0.08);
             display: flex;
             flex-direction: column;
             overflow: hidden;
             min-height: 90vh;
+            border: 1px solid var(--card-border);
         }
 
         header {
             background: var(--primary);
-            color: white;
+            color: #fefbf6;
             padding: 15px 20px;
             text-align: center;
         }
@@ -59,14 +64,13 @@
         }
 
         .sync-bar {
-            background: #1e293b;
-            color: white;
+            background: var(--primary-dark);
+            color: #f5f2eb;
             padding: 8px 15px;
             font-size: 0.85rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-bottom: 1px solid var(--border);
             gap: 5px;
         }
 
@@ -81,16 +85,16 @@
             width: 10px;
             height: 10px;
             border-radius: 50%;
-            background-color: #94a3b8;
+            background-color: #a0938a;
         }
-        .dot.online { background-color: #22c55e; }
-        .dot.offline { background-color: #ef4444; }
+        .dot.online { background-color: #52b788; }
+        .dot.offline { background-color: #e63946; }
 
         .btn-config {
-            background: transparent;
-            border: 1px solid rgba(255,255,255,0.4);
+            background: rgba(255,255,255,0.15);
+            border: 1px solid rgba(255,255,255,0.3);
             color: white;
-            padding: 4px 8px;
+            padding: 4px 10px;
             border-radius: 4px;
             cursor: pointer;
             font-size: 0.75rem;
@@ -101,12 +105,8 @@
             flex: 1;
         }
 
-        .panel {
-            display: none;
-        }
-        .panel.active {
-            display: block;
-        }
+        .panel { display: none; }
+        .panel.active { display: block; }
 
         .home-menu {
             display: flex;
@@ -119,8 +119,8 @@
         }
 
         .btn-main {
-            padding: 16px 20px;
-            font-size: 1.1rem;
+            padding: 14px 18px;
+            font-size: 1rem;
             font-weight: 600;
             border: none;
             border-radius: 10px;
@@ -130,20 +130,18 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 10px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            gap: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
         .btn-main:active { transform: scale(0.98); }
         .btn-primary { background: var(--primary); }
-        .btn-summary { background: #0891b2; }
-        .btn-debts { background: var(--warning); }
+        .btn-summary { background: #6b705c; }
+        .btn-debts { background: #a5a58d; color: #2c221e; }
         .btn-secondary { background: var(--secondary); }
-        .btn-success { background: var(--success); }
-        .btn-danger { background: var(--danger); }
+        .btn-success { background: var(--accent-success); }
+        .btn-danger { background: var(--accent-danger); }
 
-        .form-group {
-            margin-bottom: 15px;
-        }
+        .form-group { margin-bottom: 15px; }
         .form-group label {
             display: block;
             margin-bottom: 6px;
@@ -153,9 +151,11 @@
         .form-control {
             width: 100%;
             padding: 10px 12px;
-            border: 1px solid var(--border);
+            border: 1px solid var(--card-border);
             border-radius: 6px;
             font-size: 1rem;
+            background-color: #fff;
+            color: var(--text);
         }
 
         .qty-controls {
@@ -169,22 +169,20 @@
             font-size: 1.4rem;
             font-weight: bold;
             border-radius: 6px;
-            border: 1px solid var(--border);
-            background: #e2e8f0;
+            border: 1px solid var(--card-border);
+            background: var(--beige-dark);
             color: var(--text);
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
         }
-        .btn-qty:active {
-            background: #cbd5e1;
-        }
 
         .tab-bar {
             display: flex;
-            border-bottom: 2px solid var(--border);
+            border-bottom: 2px solid var(--card-border);
             margin-bottom: 15px;
+            overflow-x: auto;
         }
         .tab-btn {
             flex: 1;
@@ -193,9 +191,11 @@
             background: none;
             border: none;
             font-weight: 600;
-            color: var(--secondary);
+            color: var(--text-light);
             cursor: pointer;
             border-bottom: 3px solid transparent;
+            white-space: nowrap;
+            font-size: 0.88rem;
         }
         .tab-btn.active {
             color: var(--primary);
@@ -204,11 +204,11 @@
 
         .card {
             background: white;
-            border: 1px solid var(--border);
+            border: 1px solid var(--card-border);
             border-radius: 8px;
             padding: 15px;
-            margin-bottom: 10px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+            margin-bottom: 12px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.03);
         }
         .card-header {
             display: flex;
@@ -219,6 +219,7 @@
         .card-title {
             font-weight: 700;
             font-size: 1rem;
+            color: var(--primary);
         }
         .badge {
             padding: 4px 8px;
@@ -227,13 +228,13 @@
             font-weight: 700;
             color: white;
         }
-        .badge-success { background: var(--success); }
-        .badge-warning { background: var(--warning); }
-        .badge-danger { background: var(--danger); }
+        .badge-success { background: var(--accent-success); }
+        .badge-warning { background: var(--accent-warning); }
+        .badge-danger { background: var(--accent-danger); }
 
         .card-body {
             font-size: 0.9rem;
-            color: #475569;
+            color: var(--text);
             display: grid;
             gap: 4px;
         }
@@ -241,7 +242,7 @@
         .card-actions {
             margin-top: 10px;
             display: flex;
-            gap: 8px;
+            gap: 6px;
             align-items: center;
             flex-wrap: wrap;
         }
@@ -249,33 +250,32 @@
         .checkbox-container {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
             font-weight: 600;
             cursor: pointer;
-            user-select: none;
+            font-size: 0.85rem;
         }
 
         .modal {
             display: none;
             position: fixed;
             top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.5);
+            background: rgba(44, 34, 30, 0.6);
             align-items: center;
             justify-content: center;
             z-index: 1000;
             padding: 15px;
         }
-        .modal.active {
-            display: flex;
-        }
+        .modal.active { display: flex; }
         .modal-content {
-            background: white;
+            background: var(--card-bg);
             border-radius: 10px;
             padding: 20px;
             width: 100%;
             max-width: 500px;
             max-height: 90vh;
             overflow-y: auto;
+            border: 1px solid var(--card-border);
         }
 
         .back-btn {
@@ -290,56 +290,31 @@
             margin-bottom: 15px;
         }
 
-        .action-bar-top {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-
-        .summary-box {
-            background: #f1f5f9;
+        .category-summary {
+            background: var(--beige-dark);
+            padding: 10px;
             border-radius: 8px;
-            padding: 12px;
-            margin-bottom: 15px;
-        }
-        .summary-row {
-            display: flex;
-            justify-content: space-between;
-            padding: 4px 0;
-            font-size: 0.95rem;
-        }
-        .summary-row.total {
-            border-top: 1px solid #cbd5e1;
-            font-weight: 700;
-            margin-top: 5px;
-            padding-top: 8px;
-        }
-
-        .sale-item-btn {
-            background: white;
-            border: 2px solid var(--primary);
-            border-radius: 8px;
-            padding: 12px 15px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            cursor: pointer;
-            font-weight: 600;
-            color: var(--text);
-            text-align: left;
-        }
-
-        .expense-item {
-            display: flex;
-            justify-content: space-between;
-            padding: 8px;
-            background: #f1f5f9;
-            border-radius: 6px;
-            margin-bottom: 6px;
+            font-weight: bold;
             font-size: 0.9rem;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            color: var(--primary);
+        }
+
+        #ticketSquareContainer {
+            width: 300px;
+            height: 300px;
+            background: #fffdf9;
+            border: 2px solid var(--primary);
+            padding: 18px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            margin: 0 auto;
+            color: #2c221e;
+            font-family: 'Courier New', Courier, monospace;
         }
     </style>
 </head>
@@ -358,7 +333,8 @@
             <span id="syncStatus">Modo Local</span>
         </div>
         <div>
-            <button class="btn-config" style="background:#0284c7;" onclick="fetchFromSheets()">📥 Cargar desde Sheet</button>
+            <button class="btn-config" style="background:#2a9d8f; font-weight:bold;" onclick="openClientsModal()">👥 Clientes</button>
+            <button class="btn-config" style="background:#6b705c;" onclick="fetchFromSheets()">📥 Cargar desde Sheet</button>
             <button class="btn-config" onclick="verifyPinAndOpenConfig()">⚙️ Config</button>
         </div>
     </div>
@@ -387,7 +363,7 @@
         <!-- 2. CONFIGURAR NUEVA VENTA -->
         <div id="panelNewSaleConfig" class="panel">
             <button class="back-btn" onclick="showPanel('panelHome')">← Volver al Menú Principal</button>
-            <h2 style="margin-bottom: 15px;">Abrir Nueva Venta / Evento</h2>
+            <h2 style="margin-bottom: 15px; color: var(--primary);">Abrir Nueva Venta / Evento</h2>
             <form id="formNewSale" onsubmit="handleStartSale(event)">
                 <div class="form-group">
                     <label>Título de la Venta / Producto</label>
@@ -407,81 +383,43 @@
 
         <!-- 3. PANTALLA DE TRABAJO DE VENTA ACTIVA -->
         <div id="panelActiveSale" class="panel">
-            <div class="action-bar-top">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                 <button class="back-btn" onclick="showPanel('panelHome')">← Menú Principal</button>
                 <h3 id="activeSaleTitle" style="color: var(--primary);">Venta Activa</h3>
             </div>
 
-            <div class="action-bar-top">
-                <button class="btn-config" style="background: #475569; color: white;" onclick="openExpensesModal()">💸 Registrar / Ver Gastos</button>
-                <button class="btn-config" style="background: #0284c7; color: white;" onclick="showCurrentSaleReport()">📋 Informe de esta Venta</button>
+            <div style="display: flex; gap: 8px; margin-bottom: 15px; flex-wrap: wrap;">
+                <button class="btn-main btn-success" style="flex: 1; min-width: 140px; padding: 10px;" onclick="openNewOrderModal()">➕ Nuevo Pedido</button>
+                <button class="btn-config" style="background: var(--secondary); color: white; padding: 8px;" onclick="openExpensesModal()">💸 Gastos</button>
+                <button class="btn-config" style="background: var(--primary); color: white; padding: 8px;" onclick="showCurrentSaleReport()">📋 Informe</button>
             </div>
 
-            <!-- FORMULARIO DE NUEVO PEDIDO / EDICION -->
-            <div class="card" style="background: #f8fafc; border: 2px dashed var(--primary); margin-bottom: 20px;">
-                <h4 id="formOrderHeading" style="margin-bottom: 10px;">➕ Capturar Nuevo Pedido</h4>
-                <form id="formOrder" onsubmit="handleSaveOrder(event)">
-                    <input type="hidden" id="editingOrderId" value="">
-                    
-                    <div class="form-group">
-                        <label>Nombre del Cliente</label>
-                        <input type="text" id="clientName" list="clientsDatalist" class="form-control" placeholder="Seleccionar o escribir cliente..." oninput="autoFillPhoneByName()" required>
-                    </div>
-                    <div class="form-group">
-                        <label>WhatsApp (Opcional)</label>
-                        <input type="tel" id="clientPhone" class="form-control" placeholder="9931234567 (Opcional)">
-                    </div>
-                    <div class="form-group">
-                        <label>Cantidad de Pedido</label>
-                        <div class="qty-controls">
-                            <button type="button" class="btn-qty" onclick="changeQty(-1)">-</button>
-                            <input type="number" id="orderQty" class="form-control" min="1" value="1" style="text-align: center; font-weight: bold; font-size: 1.2rem;" onchange="updateCalculatedTotal()" onkeyup="updateCalculatedTotal()" required>
-                            <button type="button" class="btn-qty" onclick="changeQty(1)">+</button>
-                        </div>
-                    </div>
-                    <div style="background: #e2e8f0; padding: 8px; border-radius: 6px; margin-bottom: 10px; font-weight: bold;">
-                        Total Calculado: $<span id="calculatedTotal">0.00</span>
-                    </div>
-                    <div class="form-group">
-                        <label>Forma de Pago</label>
-                        <select id="paymentStatus" class="form-control" onchange="toggleAbonoField()">
-                            <option value="Pagado">🟢 Pagado (Completo)</option>
-                            <option value="Abonó">🟡 Abonó (Parcial)</option>
-                            <option value="Debe">🔴 Debe (Pendiente total)</option>
-                        </select>
-                    </div>
-                    <div class="form-group" id="abonoGroup" style="display: none;">
-                        <label>Monto Abonado ($)</label>
-                        <input type="number" id="abonoAmount" class="form-control" step="0.5" value="0">
-                    </div>
-                    <div style="display: flex; gap: 8px;">
-                        <button type="submit" id="btnSaveOrderSubmit" class="btn-main btn-success" style="flex: 1; padding: 12px;">💾 Guardar Pedido</button>
-                        <button type="button" id="btnCancelEdit" class="btn-main btn-secondary" style="display: none; padding: 12px;" onclick="resetOrderForm()">Cancelar</button>
-                    </div>
-                </form>
-            </div>
-
-            <!-- TABS PENDIENTES / ENTREGADOS -->
+            <!-- TABS CON CATEGORIZACIÓN SEPARADA -->
             <div class="tab-bar">
-                <button class="tab-btn active" onclick="switchOrderTab('pending')">📦 Pendientes (<span id="countPending">0</span>)</button>
-                <button class="tab-btn" onclick="switchOrderTab('delivered')">✅ Entregados (<span id="countDelivered">0</span>)</button>
+                <button class="tab-btn active" onclick="switchOrderTab('unpaid')">🔴 No Pagados (<span id="countUnpaid">0</span>)</button>
+                <button class="tab-btn" onclick="switchOrderTab('paid')">🟢 Abonados / Pagados (<span id="countPaid">0</span>)</button>
+                <button class="tab-btn" onclick="switchOrderTab('delivered')">📦 Entregados (<span id="countDelivered">0</span>)</button>
             </div>
 
-            <div id="listPendingOrders"></div>
+            <div id="listUnpaidOrders"></div>
+            <div id="listPaidOrders" style="display: none;"></div>
             <div id="listDeliveredOrders" style="display: none;"></div>
         </div>
 
         <!-- 4. CONTROL DE DEUDAS -->
         <div id="panelDebts" class="panel">
             <button class="back-btn" onclick="showPanel('panelHome')">← Volver al Menú Principal</button>
-            <h2 style="margin-bottom: 15px;">💳 Control de Deudas por Cliente</h2>
+            <h2 style="margin-bottom: 15px; color: var(--primary);">💳 Control de Deudas por Cliente</h2>
+            <div class="form-group">
+                <input type="text" id="debtSearchInput" class="form-control" placeholder="🔎 Buscar cliente por nombre..." oninput="renderDebts()">
+            </div>
             <div id="debtsContainer"></div>
         </div>
 
         <!-- 5. RESUMEN DE VENTA POR CAJA -->
         <div id="panelSummary" class="panel">
             <button class="back-btn" onclick="showPanel('panelHome')">← Volver al Menú Principal</button>
-            <h2 style="margin-bottom: 15px;">📊 Resumen de Venta por Caja</h2>
+            <h2 style="margin-bottom: 15px; color: var(--primary);">📊 Resumen de Venta por Caja</h2>
             <div class="form-group">
                 <label>Seleccionar Evento / Venta:</label>
                 <select id="summarySaleSelect" class="form-control" onchange="renderSummaryDetails()">
@@ -493,10 +431,163 @@
     </div>
 </div>
 
+<!-- MODAL BÚSQUEDA Y LISTADO DE CLIENTES CON PROMOCIONALES -->
+<div id="modalClientsList" class="modal">
+    <div class="modal-content">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+            <h3 style="color: var(--primary);">👥 Catálogo de Clientes</h3>
+            <button class="btn-main btn-success" style="padding: 6px 12px; font-size: 0.85rem;" onclick="openAddClientForm()">➕ Agregar Nuevo</button>
+        </div>
+
+        <div class="form-group">
+            <input type="text" id="searchClientRoster" class="form-control" placeholder="🔎 Buscar cliente por nombre o WhatsApp..." oninput="renderClientsRoster()">
+        </div>
+
+        <!-- FORMULARIO OCULTO PARA AGREGAR/EDITAR CLIENTE -->
+        <div id="clientAddFormContainer" style="display: none; background: var(--beige-dark); padding: 12px; border-radius: 8px; margin-bottom: 15px;">
+            <h4 id="clientFormTitle" style="margin-bottom: 8px; color: var(--primary);">Agregar Cliente</h4>
+            <div class="form-group">
+                <label>Nombre del Cliente</label>
+                <input type="text" id="newClientName" class="form-control" placeholder="Ej. Juan Pérez">
+            </div>
+            <div class="form-group">
+                <label>WhatsApp (10 dígitos)</label>
+                <input type="tel" id="newClientPhone" class="form-control" placeholder="Ej. 9931234567">
+            </div>
+            <div style="display: flex; gap: 6px;">
+                <button class="btn-main btn-success" style="flex:1; padding: 8px;" onclick="saveClientFromModal()">💾 Guardar</button>
+                <button class="btn-main btn-secondary" style="padding: 8px;" onclick="closeClientAddForm()">Cancelar</button>
+            </div>
+        </div>
+
+        <!-- CONTENEDOR DONDE SE MUESTRAN LOS CLIENTES EXISTENTES -->
+        <div id="clientsRosterList" style="display: grid; gap: 10px; max-height: 50vh; overflow-y: auto;"></div>
+
+        <button class="btn-main btn-secondary" style="width: 100%; margin-top: 15px; padding: 8px;" onclick="closeModal('modalClientsList')">Cerrar Ventana</button>
+    </div>
+</div>
+
+<!-- MODAL PARA ENVIAR IMAGEN PROMOCIONAL Y MENSAJE POR WHATSAPP -->
+<div id="modalSendPromo" class="modal">
+    <div class="modal-content">
+        <h3 style="color: var(--primary); text-align: center;">📣 Enviar Promocional</h3>
+        <p id="promoTargetClient" style="text-align: center; font-weight: bold; margin: 8px 0; font-size: 0.95rem;"></p>
+
+        <div class="form-group">
+            <label>1. Seleccionar Imagen Promocional (Móvil o PC):</label>
+            <input type="file" id="promoImageInput" accept="image/*" class="form-control" onchange="previewPromoImage(event)">
+        </div>
+
+        <div id="promoImagePreviewContainer" style="text-align: center; margin-bottom: 12px; display: none;">
+            <img id="promoImagePreview" src="" alt="Vista previa" style="max-width: 100%; max-height: 180px; border-radius: 8px; border: 1px solid var(--card-border);">
+        </div>
+
+        <div class="form-group">
+            <label>2. Mensaje para el Cliente:</label>
+            <textarea id="promoMessageText" class="form-control" rows="3" placeholder="Ej. ¡Hola! Tenemos nueva venta de empanadas hoy. Te enviamos nuestro catálogo del día. 🥐"></textarea>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+            <button class="btn-main btn-success" onclick="executeSendPromoWhatsApp()">📲 Abrir WhatsApp y Enviar Promo</button>
+            <button class="btn-main btn-secondary" onclick="closeModal('modalSendPromo')">Cancelar</button>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL EMERGENTE DE CAPTURA / EDICIÓN DE PEDIDO -->
+<div id="modalOrderForm" class="modal">
+    <div class="modal-content">
+        <h3 id="formOrderHeading" style="margin-bottom: 10px; color: var(--primary);">➕ Capturar Nuevo Pedido</h3>
+        <form id="formOrder" onsubmit="handleSaveOrder(event)">
+            <input type="hidden" id="editingOrderId" value="">
+            
+            <div class="form-group">
+                <label>Nombre del Cliente</label>
+                <input type="text" id="clientName" list="clientsDatalist" class="form-control" placeholder="Seleccionar o escribir cliente..." onchange="autoFillPhoneByName()" oninput="autoFillPhoneByName()" required>
+            </div>
+            <div class="form-group">
+                <label>WhatsApp (Opcional)</label>
+                <input type="tel" id="clientPhone" class="form-control" placeholder="9931234567 (Opcional)">
+            </div>
+            <div class="form-group">
+                <label>Cantidad de Pedido</label>
+                <div class="qty-controls">
+                    <button type="button" class="btn-qty" onclick="changeQty(-1)">-</button>
+                    <input type="number" id="orderQty" class="form-control" min="1" value="1" style="text-align: center; font-weight: bold; font-size: 1.2rem;" onchange="updateCalculatedTotal()" onkeyup="updateCalculatedTotal()" required>
+                    <button type="button" class="btn-qty" onclick="changeQty(1)">+</button>
+                </div>
+            </div>
+            <div style="background: var(--beige-dark); padding: 8px; border-radius: 6px; margin-bottom: 10px; font-weight: bold; text-align: center; color: var(--primary);">
+                Total Calculado: $<span id="calculatedTotal">0.00</span>
+            </div>
+            <div class="form-group">
+                <label>Forma de Pago Inicial</label>
+                <select id="paymentStatus" class="form-control" onchange="toggleAbonoField()">
+                    <option value="Debe" selected>🔴 Debe (Pendiente total)</option>
+                    <option value="Abonó">🟡 Abonó (Parcial)</option>
+                    <option value="Pagado">🟢 Pagado (Completo)</option>
+                </select>
+            </div>
+            <div class="form-group" id="abonoGroup" style="display: none;">
+                <label>Monto Abonado Inicial ($)</label>
+                <input type="number" id="abonoAmount" class="form-control" step="0.5" value="0">
+            </div>
+            <div style="display: flex; gap: 8px;">
+                <button type="submit" id="btnSaveOrderSubmit" class="btn-main btn-success" style="flex: 1; padding: 10px;">💾 Guardar Pedido</button>
+                <button type="button" class="btn-main btn-secondary" style="padding: 10px;" onclick="closeModal('modalOrderForm')">Cancelar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- MODAL INTEGRADO: ABONOS / TICKET / EDICIÓN -->
+<div id="modalOrderActions" class="modal">
+    <div class="modal-content">
+        <h3 style="color: var(--primary); text-align:center;">📦 Gestión de Pedido</h3>
+        <p id="actionModalClientInfo" style="margin: 10px 0; text-align:center; font-size:0.9rem; font-weight:bold;"></p>
+
+        <!-- Sección de Nuevo Abono -->
+        <div style="background: var(--beige-dark); padding: 12px; border-radius: 8px; margin-bottom: 15px;">
+            <h4 style="margin-bottom: 8px; color: var(--primary);">💰 Registrar Nuevo Abono / Liquidar</h4>
+            <div class="form-group" style="margin-bottom: 8px;">
+                <input type="number" id="newAbonoAmount" class="form-control" placeholder="Monto a abonar $" step="0.5" min="0.5">
+            </div>
+            <button type="button" class="btn-main btn-success" style="width: 100%; padding: 8px; font-size: 0.9rem;" onclick="handleSaveNewAbono()">➕ Agregar Abono</button>
+        </div>
+
+        <!-- Vista previa Ticket Cuadrado -->
+        <div id="ticketSquareContainer">
+            <div>
+                <div style="font-weight: bold; font-size: 1.05rem; text-align:center;">SISTEMA GERISÍN</div>
+                <div style="font-size: 0.7rem; border-bottom: 1px dashed #2c221e; padding-bottom: 4px; text-align:center;" id="tkDate"></div>
+            </div>
+            <div style="text-align: left; font-size: 0.8rem; display: grid; gap: 3px;">
+                <div><b>Cliente:</b> <span id="tkClient"></span></div>
+                <div><b>Producto:</b> <span id="tkProduct"></span></div>
+                <div><b>Cantidad:</b> <span id="tkQty"></span></div>
+                <div><b>Total:</b> $<span id="tkTotal"></span></div>
+                <div><b>Abonado:</b> $<span id="tkAbono"></span></div>
+                <div><b>Restante:</b> $<span id="tkDebt"></span></div>
+                <div><b>Estado:</b> <span id="tkStatus"></span></div>
+            </div>
+            <div style="font-size: 0.7rem; border-top: 1px dashed #2c221e; padding-top: 4px; text-align:center;">
+                ¡Gracias por su compra!
+            </div>
+        </div>
+
+        <div style="margin-top: 15px; display: flex; flex-direction: column; gap: 8px;">
+            <button class="btn-main btn-primary" onclick="downloadTicketImage()">💾 Descargar Imagen Ticket</button>
+            <button class="btn-main btn-success" onclick="sendWhatsAppTextMessage()">📲 Enviar por WhatsApp</button>
+            <button class="btn-main btn-secondary" onclick="triggerEditFromModal()">✏️ Editar Datos del Pedido</button>
+            <button class="btn-main btn-secondary" style="background:#6e6057;" onclick="closeModal('modalOrderActions')">Cerrar</button>
+        </div>
+    </div>
+</div>
+
 <!-- MODAL CONFIGURACION -->
 <div id="modalConfig" class="modal">
     <div class="modal-content">
-        <h3>Configuración de Google Sheets</h3>
+        <h3 style="color: var(--primary);">Configuración de Google Sheets</h3>
         <div class="form-group" style="margin-top: 10px;">
             <label>URL del Web App (Apps Script):</label>
             <input type="url" id="sheetsWebUrl" class="form-control" placeholder="https://script.google.com/macros/s/.../exec">
@@ -510,7 +601,7 @@
 <!-- MODAL GASTOS -->
 <div id="modalExpenses" class="modal">
     <div class="modal-content">
-        <h3>💸 Gastos de esta Venta</h3>
+        <h3 style="color: var(--primary);">💸 Gastos de esta Venta</h3>
         <form onsubmit="handleSaveExpense(event)" style="margin-top: 10px;">
             <div class="form-group">
                 <label>Descripción del Gasto</label>
@@ -523,8 +614,8 @@
             <button type="submit" class="btn-main btn-success" style="width: 100%; padding: 10px;">+ Agregar Gasto</button>
         </form>
 
-        <hr style="margin: 15px 0;">
-        <h4 style="margin-bottom: 8px;">Gastos Realizados:</h4>
+        <hr style="margin: 15px 0; border: none; border-top: 1px solid var(--card-border);">
+        <h4 style="margin-bottom: 8px; color: var(--primary);">Gastos Realizados:</h4>
         <div id="modalExpensesList"></div>
 
         <button type="button" class="btn-main btn-secondary" style="width: 100%; margin-top: 15px; padding: 8px;" onclick="closeModal('modalExpenses')">Cerrar Ventana</button>
@@ -534,7 +625,7 @@
 <!-- MODAL INFORME -->
 <div id="modalReport" class="modal">
     <div class="modal-content">
-        <h3 id="reportTitle">Informe de Venta</h3>
+        <h3 id="reportTitle" style="color: var(--primary);">Informe de Venta</h3>
         <div id="reportContent" style="margin: 15px 0;"></div>
         <button class="btn-main btn-secondary" style="width: 100%; padding: 8px;" onclick="closeModal('modalReport')">Cerrar</button>
     </div>
@@ -545,10 +636,13 @@
         config: { scriptUrl: '' },
         sales: [],
         orders: [],
-        expenses: []
+        expenses: [],
+        clients: {}
     };
 
     let currentSaleId = null;
+    let selectedOrderForAction = null;
+    let selectedPromoClient = null;
 
     window.onload = function() {
         loadLocalStorage();
@@ -569,6 +663,7 @@
         if (data) {
             try { db = JSON.parse(data); } catch(e){}
         }
+        if (!db.clients) db.clients = {};
         if (db.config && db.config.scriptUrl) {
             document.getElementById('sheetsWebUrl').value = db.config.scriptUrl;
         }
@@ -591,7 +686,6 @@
         }
     }
 
-    // LEER Y SINCRONIZAR DATOS DESDE GOOGLE SHEETS
     function fetchFromSheets() {
         if (!db.config.scriptUrl) return;
         fetch(db.config.scriptUrl)
@@ -601,6 +695,21 @@
                     db.sales = data.sales;
                     db.orders = data.orders;
                     db.expenses = data.expenses || [];
+                    
+                    db.orders.forEach(o => {
+                        if (o.client && o.phone) {
+                            db.clients[o.client.trim().toLowerCase()] = o.phone.trim();
+                        }
+                    });
+
+                    if (data.clients && Array.isArray(data.clients)) {
+                        data.clients.forEach(c => {
+                            if (c.name) {
+                                db.clients[c.name.trim().toLowerCase()] = c.phone ? c.phone.trim() : '';
+                            }
+                        });
+                    }
+
                     saveLocalStorage();
                     renderOpenSalesList();
                     if (currentSaleId) renderOrdersList();
@@ -611,25 +720,25 @@
 
     function updateClientsDatalist() {
         const datalist = document.getElementById('clientsDatalist');
-        const clientMap = {};
-        
         db.orders.forEach(o => {
             if (o.client) {
-                const nameKey = o.client.trim();
-                if (!clientMap[nameKey]) clientMap[nameKey] = o.phone || '';
+                const key = o.client.trim().toLowerCase();
+                if (!db.clients[key] && o.phone) db.clients[key] = o.phone;
             }
         });
 
-        const names = Object.keys(clientMap).sort();
-        datalist.innerHTML = names.map(name => `<option value="${name}">`).join('');
+        datalist.innerHTML = Object.keys(db.clients).map(k => `<option value="${formatCapitalName(k)}">`).join('');
+    }
+
+    function formatCapitalName(str) {
+        return str.replace(/\b\w/g, l => l.toUpperCase());
     }
 
     function autoFillPhoneByName() {
-        const inputName = document.getElementById('clientName').value.trim();
+        const inputName = document.getElementById('clientName').value.trim().toLowerCase();
         if (!inputName) return;
-        const match = db.orders.find(o => o.client.toLowerCase().trim() === inputName.toLowerCase() && o.phone);
-        if (match && match.phone) {
-            document.getElementById('clientPhone').value = match.phone;
+        if (db.clients[inputName]) {
+            document.getElementById('clientPhone').value = db.clients[inputName];
         }
     }
 
@@ -645,16 +754,159 @@
     function showPanel(panelId) {
         document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
         document.getElementById(panelId).classList.add('active');
-        if (panelId === 'panelHome') {
-            renderOpenSalesList();
+        if (panelId === 'panelHome') renderOpenSalesList();
+    }
+
+    function openModal(modalId) { document.getElementById(modalId).classList.add('active'); }
+    function closeModal(modalId) { document.getElementById(modalId).classList.remove('active'); }
+
+    function openClientsModal() {
+        closeClientAddForm();
+        renderClientsRoster();
+        openModal('modalClientsList');
+    }
+
+    function renderClientsRoster() {
+        const container = document.getElementById('clientsRosterList');
+        const filter = document.getElementById('searchClientRoster') ? document.getElementById('searchClientRoster').value.toLowerCase().trim() : '';
+
+        // CONSTRUIR MAPA UNIFICADO DE CLIENTES EXISTENTES (DESDE PEDIDOS + DICCIONARIO)
+        const allClientsMap = {};
+
+        // 1. Extraer desde historial de pedidos
+        db.orders.forEach(o => {
+            if (o.client) {
+                const key = o.client.trim().toLowerCase();
+                if (!allClientsMap[key]) {
+                    allClientsMap[key] = {
+                        name: o.client.trim(),
+                        phone: o.phone ? o.phone.trim() : (db.clients[key] || '')
+                    };
+                } else if (!allClientsMap[key].phone && o.phone) {
+                    allClientsMap[key].phone = o.phone.trim();
+                }
+            }
+        });
+
+        // 2. Extraer desde catálogo registrado
+        Object.keys(db.clients).forEach(key => {
+            if (!allClientsMap[key]) {
+                allClientsMap[key] = {
+                    name: formatCapitalName(key),
+                    phone: db.clients[key] || ''
+                };
+            } else if (!allClientsMap[key].phone && db.clients[key]) {
+                allClientsMap[key].phone = db.clients[key];
+            }
+        });
+
+        const clientKeys = Object.keys(allClientsMap).filter(k => {
+            if (!filter) return true;
+            return k.includes(filter) || (allClientsMap[k].phone && allClientsMap[k].phone.includes(filter));
+        });
+
+        if (clientKeys.length === 0) {
+            container.innerHTML = '<p style="color:#6e6057; font-size:0.9rem; text-align:center; padding:15px;">No hay clientes registrados o coincidentes.</p>';
+            return;
+        }
+
+        container.innerHTML = clientKeys.map(k => {
+            const client = allClientsMap[k];
+            return `
+                <div class="card" style="margin-bottom: 0; padding: 12px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+                        <div>
+                            <div style="font-weight:bold; color:var(--primary); font-size:0.95rem;">👤 ${client.name}</div>
+                            <div style="font-size:0.8rem; color:#6e6057;">📱 WhatsApp: ${client.phone || '<i>Sin registrar</i>'}</div>
+                        </div>
+                        <div style="display:flex; gap:6px;">
+                            <button class="btn-main btn-success" style="padding:6px 10px; font-size:0.8rem;" onclick="openSendPromoModal('${client.name.replace(/'/g, "\\'")}', '${client.phone}')">
+                                📣 Enviar Promo
+                            </button>
+                            <button class="btn-main btn-secondary" style="padding:6px 10px; font-size:0.8rem;" onclick="editClientPhone('${client.name.replace(/'/g, "\\'")}', '${client.phone}')">
+                                ✏️
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    function openAddClientForm() {
+        document.getElementById('newClientName').value = '';
+        document.getElementById('newClientPhone').value = '';
+        document.getElementById('clientFormTitle').innerText = '➕ Agregar Cliente';
+        document.getElementById('clientAddFormContainer').style.display = 'block';
+    }
+
+    function closeClientAddForm() {
+        document.getElementById('clientAddFormContainer').style.display = 'none';
+    }
+
+    function saveClientFromModal() {
+        const name = document.getElementById('newClientName').value.trim();
+        const phone = document.getElementById('newClientPhone').value.trim();
+
+        if (!name) {
+            alert("Por favor escribe el nombre del cliente.");
+            return;
+        }
+
+        const key = name.toLowerCase();
+        db.clients[key] = phone;
+        saveLocalStorage();
+
+        syncItem({ type: 'CLIENT', name: name, phone: phone });
+
+        closeClientAddForm();
+        renderClientsRoster();
+    }
+
+    function editClientPhone(clientName, currentPhone) {
+        const newPhone = prompt(`Editar WhatsApp para ${clientName}:`, currentPhone);
+        if (newPhone !== null) {
+            const key = clientName.toLowerCase();
+            db.clients[key] = newPhone.trim();
+            saveLocalStorage();
+
+            syncItem({ type: 'CLIENT', name: clientName, phone: newPhone.trim() });
+            renderClientsRoster();
         }
     }
 
-    function openModal(modalId) {
-        document.getElementById(modalId).classList.add('active');
+    function openSendPromoModal(clientName, clientPhone) {
+        selectedPromoClient = { name: clientName, phone: clientPhone };
+        document.getElementById('promoTargetClient').innerText = `Cliente: ${clientName} (${clientPhone || 'Sin número'})`;
+        document.getElementById('promoImageInput').value = '';
+        document.getElementById('promoImagePreviewContainer').style.display = 'none';
+        document.getElementById('promoMessageText').value = `¡Hola *${clientName}*! Te compartimos nuestra nueva oferta y catálogo del día. 🥐😊`;
+        openModal('modalSendPromo');
     }
-    function closeModal(modalId) {
-        document.getElementById(modalId).classList.remove('active');
+
+    function previewPromoImage(event) {
+        const file = event.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('promoImagePreview').src = e.target.result;
+                document.getElementById('promoImagePreviewContainer').style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        }
+    }
+
+    function executeSendPromoWhatsApp() {
+        if (!selectedPromoClient) return;
+        const msg = document.getElementById('promoMessageText').value;
+        const cleanPhone = selectedPromoClient.phone ? selectedPromoClient.phone.replace(/\D/g, '') : '';
+
+        const url = cleanPhone 
+            ? `https://wa.me/52${cleanPhone}?text=${encodeURIComponent(msg)}`
+            : `https://wa.me/?text=${encodeURIComponent(msg)}`;
+
+        window.open(url, '_blank');
+        closeModal('modalSendPromo');
     }
 
     function saveConfig() {
@@ -679,7 +931,7 @@
     function renderOpenSalesList() {
         const container = document.getElementById('openSalesList');
         if (db.sales.length === 0) {
-            container.innerHTML = '<p style="color:#64748b; font-size:0.9rem;">No hay ventas abiertas actualmente.</p>';
+            container.innerHTML = '<p style="color:#6e6057; font-size:0.9rem;">No hay ventas abiertas actualmente.</p>';
             return;
         }
 
@@ -687,12 +939,14 @@
             const saleOrders = db.orders.filter(o => o.saleId === s.id);
             const pendingQty = saleOrders.filter(o => !o.delivered).length;
             return `
-                <div class="sale-item-btn" onclick="openExistingSale('${s.id}')">
-                    <div>
-                        <div style="font-size:1.05rem;">🏷️ <b>${s.title}</b> ($${s.price.toFixed(2)})</div>
-                        <div style="font-size:0.8rem; color:#64748b;">📅 ${s.date} | Pedidos: ${saleOrders.length} (${pendingQty} pendientes)</div>
+                <div class="card" style="cursor:pointer;" onclick="openExistingSale('${s.id}')">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <div>
+                            <div style="font-size:1.05rem; color:var(--primary);">🏷️ <b>${s.title}</b> ($${s.price.toFixed(2)})</div>
+                            <div style="font-size:0.8rem; color:#6e6057;">📅 ${s.date} | Pedidos: ${saleOrders.length} (${pendingQty} pendientes)</div>
+                        </div>
+                        <span style="color:var(--primary); font-size:1.2rem;">➔</span>
                     </div>
-                    <span style="color:var(--primary); font-size:1.2rem;">➔</span>
                 </div>
             `;
         }).join('');
@@ -740,6 +994,11 @@
         showPanel('panelActiveSale');
     }
 
+    function openNewOrderModal() {
+        resetOrderForm();
+        openModal('modalOrderForm');
+    }
+
     function changeQty(delta) {
         const input = document.getElementById('orderQty');
         let current = parseInt(input.value) || 1;
@@ -780,6 +1039,14 @@
 
         const debt = Math.max(0, total - abono);
 
+        if (client) {
+            const clientKey = client.toLowerCase();
+            if (phone) db.clients[clientKey] = phone;
+            else if (!db.clients[clientKey]) db.clients[clientKey] = '';
+        }
+
+        const nowStr = new Date().toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' });
+
         if (editingId) {
             const order = db.orders.find(o => o.id === editingId);
             if (order) {
@@ -803,13 +1070,16 @@
                 status: status,
                 abono: abono,
                 debt: debt,
-                delivered: false
+                delivered: false,
+                datetime: nowStr
             };
             db.orders.push(newOrder);
             syncItem({ type: 'ORDER', ...newOrder });
+            openOrderActionsModal(newOrder.id);
         }
 
         saveLocalStorage();
+        closeModal('modalOrderForm');
         resetOrderForm();
         renderOrdersList();
     }
@@ -831,48 +1101,86 @@
         updateCalculatedTotal();
         document.getElementById('formOrderHeading').innerText = '✏️ Editar Pedido';
         document.getElementById('btnSaveOrderSubmit').innerText = '💾 Actualizar Pedido';
-        document.getElementById('btnCancelEdit').style.display = 'block';
-        document.getElementById('formOrder').scrollIntoView({ behavior: 'smooth' });
+        openModal('modalOrderForm');
     }
 
     function resetOrderForm() {
         document.getElementById('editingOrderId').value = '';
         document.getElementById('formOrder').reset();
         document.getElementById('orderQty').value = 1;
+        document.getElementById('paymentStatus').value = 'Debe';
         document.getElementById('formOrderHeading').innerText = '➕ Capturar Nuevo Pedido';
         document.getElementById('btnSaveOrderSubmit').innerText = '💾 Guardar Pedido';
-        document.getElementById('btnCancelEdit').style.display = 'none';
         updateCalculatedTotal();
         toggleAbonoField();
     }
 
-    function sendOrderNotification(orderId) {
+    function openOrderActionsModal(orderId) {
         const order = db.orders.find(o => o.id === orderId);
         if (!order) return;
         const sale = db.sales.find(s => s.id === order.saleId);
-        if (!sale) return;
+        selectedOrderForAction = { order, sale };
 
-        let msg = `Hola *${order.client}*, hemos registrado tu pedido de *${sale.title}*:\n\n`;
-        msg += `• Cantidad: ${order.qty} pzs x $${sale.price.toFixed(2)} = Total: $${order.total.toFixed(2)}\n`;
-        msg += `• Estado de Pago: ${order.status}\n`;
-        if (order.status === 'Abonó') msg += `• Abonado: $${order.abono.toFixed(2)} (Pendiente: $${order.debt.toFixed(2)})\n`;
-        if (order.status === 'Debe') msg += `• Saldo pendiente: $${order.debt.toFixed(2)}\n`;
-        msg += `\n*Te avisaremos tan pronto como tu pedido esté listo / sea enviado.* ¡Muchas gracias por tu compra!`;
+        document.getElementById('actionModalClientInfo').innerText = `${order.client} - Pendiente: $${order.debt.toFixed(2)}`;
+        document.getElementById('newAbonoAmount').value = '';
 
-        const cleanPhone = order.phone ? order.phone.replace(/\D/g, '') : '';
-        const url = cleanPhone ? `https://wa.me/52${cleanPhone}?text=${encodeURIComponent(msg)}` : `https://wa.me/?text=${encodeURIComponent(msg)}`;
-        window.open(url, '_blank');
+        document.getElementById('tkDate').innerText = order.datetime || new Date().toLocaleString();
+        document.getElementById('tkClient').innerText = order.client;
+        document.getElementById('tkProduct').innerText = sale ? sale.title : '';
+        document.getElementById('tkQty').innerText = `${order.qty} pzs`;
+        document.getElementById('tkTotal').innerText = order.total.toFixed(2);
+        document.getElementById('tkAbono').innerText = order.abono.toFixed(2);
+        document.getElementById('tkDebt').innerText = order.debt.toFixed(2);
+        document.getElementById('tkStatus').innerText = order.status;
+
+        openModal('modalOrderActions');
+    }
+
+    function handleSaveNewAbono() {
+        if (!selectedOrderForAction) return;
+        const addAmount = parseFloat(document.getElementById('newAbonoAmount').value) || 0;
+        const { order } = selectedOrderForAction;
+
+        if (addAmount > 0) {
+            order.abono += addAmount;
+            order.debt = Math.max(0, order.total - order.abono);
+
+            if (order.debt === 0) {
+                order.status = 'Pagado';
+            } else {
+                order.status = 'Abonó';
+            }
+
+            saveLocalStorage();
+            syncItem({ type: 'ORDER', ...order });
+            renderOrdersList();
+            if (document.getElementById('panelDebts').classList.contains('active')) {
+                renderDebts();
+            }
+            openOrderActionsModal(order.id);
+        }
+    }
+
+    function triggerEditFromModal() {
+        if (!selectedOrderForAction) return;
+        closeModal('modalOrderActions');
+        editOrder(selectedOrderForAction.order.id);
     }
 
     function switchOrderTab(tab) {
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        if (tab === 'pending') {
+        document.getElementById('listUnpaidOrders').style.display = 'none';
+        document.getElementById('listPaidOrders').style.display = 'none';
+        document.getElementById('listDeliveredOrders').style.display = 'none';
+
+        if (tab === 'unpaid') {
             document.querySelectorAll('.tab-btn')[0].classList.add('active');
-            document.getElementById('listPendingOrders').style.display = 'block';
-            document.getElementById('listDeliveredOrders').style.display = 'none';
-        } else {
+            document.getElementById('listUnpaidOrders').style.display = 'block';
+        } else if (tab === 'paid') {
             document.querySelectorAll('.tab-btn')[1].classList.add('active');
-            document.getElementById('listPendingOrders').style.display = 'none';
+            document.getElementById('listPaidOrders').style.display = 'block';
+        } else {
+            document.querySelectorAll('.tab-btn')[2].classList.add('active');
             document.getElementById('listDeliveredOrders').style.display = 'block';
         }
     }
@@ -887,16 +1195,69 @@
         }
     }
 
+    function sendOnTheWayMessage(orderId) {
+        const order = db.orders.find(o => o.id === orderId);
+        if (!order) return;
+        const sale = db.sales.find(s => s.id === order.saleId);
+
+        let msg = `Hola *${order.client}*, ¡tu pedido de *${sale ? sale.title : 'tu compra'}* (${order.qty} pzs) ya va en camino! 🚴💨\n\n`;
+        if (order.debt > 0) msg += `*Saldo pendiente a pagar al recibir:* $${order.debt.toFixed(2)}\n`;
+        msg += `¡Estar atento para recibirlo, muchas gracias!`;
+
+        const cleanPhone = order.phone ? order.phone.replace(/\D/g, '') : '';
+        const url = cleanPhone ? `https://wa.me/52${cleanPhone}?text=${encodeURIComponent(msg)}` : `https://wa.me/?text=${encodeURIComponent(msg)}`;
+        window.open(url, '_blank');
+    }
+
+    function downloadTicketImage() {
+        const ticketEl = document.getElementById('ticketSquareContainer');
+        html2canvas(ticketEl, { scale: 2 }).then(canvas => {
+            const link = document.createElement('a');
+            link.download = `Ticket_${selectedOrderForAction.order.client}_${Date.now()}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        });
+    }
+
+    function sendWhatsAppTextMessage() {
+        if (!selectedOrderForAction) return;
+        const { order, sale } = selectedOrderForAction;
+
+        let msg = `Hola *${order.client}*, comprobante de tu pedido de *${sale ? sale.title : ''}*:\n\n`;
+        msg += `• Cantidad: ${order.qty} pzs x $${sale ? sale.price.toFixed(2) : ''} = Total: $${order.total.toFixed(2)}\n`;
+        msg += `• Estado de Pago: ${order.status}\n`;
+        msg += `• Abonado: $${order.abono.toFixed(2)}\n`;
+        msg += `• Restante por pagar: $${order.debt.toFixed(2)}\n\n`;
+        msg += `¡Muchas gracias por tu compra!`;
+
+        const cleanPhone = order.phone ? order.phone.replace(/\D/g, '') : '';
+        const url = cleanPhone ? `https://wa.me/52${cleanPhone}?text=${encodeURIComponent(msg)}` : `https://wa.me/?text=${encodeURIComponent(msg)}`;
+        window.open(url, '_blank');
+    }
+
     function renderOrdersList() {
-        const pendingContainer = document.getElementById('listPendingOrders');
+        const unpaidContainer = document.getElementById('listUnpaidOrders');
+        const paidContainer = document.getElementById('listPaidOrders');
         const deliveredContainer = document.getElementById('listDeliveredOrders');
 
-        const activeOrders = db.orders.filter(o => o.saleId === currentSaleId);
-        const pending = activeOrders.filter(o => !o.delivered);
+        const activeOrders = db.orders.filter(o => o.saleId === currentSaleId)
+            .sort((a, b) => {
+                const idA = parseInt(a.id.replace('ORD_', '')) || 0;
+                const idB = parseInt(b.id.replace('ORD_', '')) || 0;
+                return idB - idA;
+            });
+
+        const unpaid = activeOrders.filter(o => !o.delivered && o.debt > 0);
+        const paid = activeOrders.filter(o => !o.delivered && o.debt === 0);
         const delivered = activeOrders.filter(o => o.delivered);
 
-        document.getElementById('countPending').innerText = pending.length;
+        document.getElementById('countUnpaid').innerText = unpaid.length;
+        document.getElementById('countPaid').innerText = paid.length;
         document.getElementById('countDelivered').innerText = delivered.length;
+
+        const sumUnpaid = unpaid.reduce((sum, o) => sum + o.debt, 0);
+        const sumPaid = paid.reduce((sum, o) => sum + o.total, 0);
+        const sumDelivered = delivered.reduce((sum, o) => sum + o.total, 0);
 
         const renderCard = (o) => {
             let badgeClass = 'badge-success';
@@ -911,27 +1272,34 @@
                     </div>
                     <div class="card-body">
                         <div>📦 Pedido: <b>${o.qty} pzs</b> ($${o.total.toFixed(2)})</div>
-                        <div>💵 Abonado: $${o.abono.toFixed(2)} | Pendiente: <b>$${o.debt.toFixed(2)}</b></div>
+                        <div>💵 Abonado: $${o.abono.toFixed(2)} | Pendiente: <b style="color:var(--accent-danger);">$${o.debt.toFixed(2)}</b></div>
                         ${o.phone ? `<div>📱 Tel: ${o.phone}</div>` : ''}
+                        <div style="font-size:0.75rem; color:var(--text-light); margin-top:2px;">🕒 ${o.datetime || ''}</div>
                     </div>
                     <div class="card-actions">
                         <label class="checkbox-container">
                             <input type="checkbox" ${o.delivered ? 'checked' : ''} onchange="toggleDeliveryStatus('${o.id}')">
-                            Entregado
+                            Atendido
                         </label>
-                        <button type="button" class="btn-main btn-secondary" style="padding: 6px 10px; font-size: 0.8rem; background: #64748b; margin-left: auto;" onclick="editOrder('${o.id}')">
-                            ✏️ Editar
+                        <button type="button" class="btn-main btn-primary" style="padding: 5px 8px; font-size: 0.8rem;" onclick="openOrderActionsModal('${o.id}')">
+                            💰 Abonos / Ticket / Editar
                         </button>
-                        <button type="button" class="btn-main btn-primary" style="padding: 6px 10px; font-size: 0.8rem; background: #25d366;" onclick="sendOrderNotification('${o.id}')">
-                            📲 Notificar
+                        <button type="button" class="btn-main" style="padding: 5px 8px; font-size: 0.8rem; background:#2a9d8f;" onclick="sendOnTheWayMessage('${o.id}')">
+                            🚴 En camino
                         </button>
                     </div>
                 </div>
             `;
         };
 
-        pendingContainer.innerHTML = pending.length ? pending.map(renderCard).join('') : '<p style="color:#64748b;">No hay pedidos pendientes.</p>';
-        deliveredContainer.innerHTML = delivered.length ? delivered.map(renderCard).join('') : '<p style="color:#64748b;">No hay pedidos entregados.</p>';
+        unpaidContainer.innerHTML = `<div class="category-summary"><span>Total por Cobrar (Deudas):</span> <span>$${sumUnpaid.toFixed(2)}</span></div>` +
+            (unpaid.length ? unpaid.map(renderCard).join('') : '<p style="color:#6e6057;">No hay pedidos pendientes de pago.</p>');
+
+        paidContainer.innerHTML = `<div class="category-summary"><span>Total Cobrado (Completos):</span> <span>$${sumPaid.toFixed(2)}</span></div>` +
+            (paid.length ? paid.map(renderCard).join('') : '<p style="color:#6e6057;">No hay pedidos pagados pendientes de entrega.</p>');
+
+        deliveredContainer.innerHTML = `<div class="category-summary"><span>Total Pedidos Entregados:</span> <span>$${sumDelivered.toFixed(2)}</span></div>` +
+            (delivered.length ? delivered.map(renderCard).join('') : '<p style="color:#6e6057;">No hay pedidos entregados.</p>');
     }
 
     function openExpensesModal() {
@@ -965,7 +1333,7 @@
         const activeExpenses = db.expenses.filter(e => e.saleId === currentSaleId);
 
         if (activeExpenses.length === 0) {
-            container.innerHTML = '<p style="color:#64748b; font-size:0.85rem;">No hay gastos registrados en esta venta.</p>';
+            container.innerHTML = '<p style="color:#6e6057; font-size:0.85rem;">No hay gastos registrados en esta venta.</p>';
             return;
         }
 
@@ -973,7 +1341,7 @@
         let html = activeExpenses.map(e => {
             total += e.amount;
             return `
-                <div class="expense-item">
+                <div style="display:flex; justify-content:space-between; padding:8px; background:var(--beige-dark); border-radius:6px; margin-bottom:6px; font-size:0.9rem;">
                     <span>${e.desc}</span>
                     <b>$${e.amount.toFixed(2)}</b>
                 </div>
@@ -981,7 +1349,7 @@
         }).join('');
 
         html += `
-            <div style="text-align:right; font-weight:bold; margin-top:8px; color:var(--danger);">
+            <div style="text-align:right; font-weight:bold; margin-top:8px; color:var(--accent-danger);">
                 Total Gastos: $${total.toFixed(2)}
             </div>
         `;
@@ -1013,15 +1381,15 @@
 
         document.getElementById('reportTitle').innerText = `Informe: ${sale.title}`;
         document.getElementById('reportContent').innerHTML = `
-            <div class="summary-box">
-                <div class="summary-row"><span>Fecha:</span> <b>${sale.date}</b></div>
-                <div class="summary-row"><span>Precio Unitario:</span> <b>$${sale.price.toFixed(2)}</b></div>
-                <div class="summary-row"><span>Productos Vendidos:</span> <b>${totalQty} pzs</b></div>
-                <div class="summary-row"><span>Ventas Brutas Totales:</span> <b>$${totalBruto.toFixed(2)}</b></div>
-                <div class="summary-row"><span>Efectivo/Abonado Cobrado:</span> <b style="color:var(--success);">$${totalCobrado.toFixed(2)}</b></div>
-                <div class="summary-row"><span>Pendiente por Cobrar (Deudas):</span> <b style="color:var(--danger);">$${totalDeudas.toFixed(2)}</b></div>
-                <div class="summary-row"><span>Total de Gastos:</span> <b style="color:var(--warning);">$${totalGastos.toFixed(2)}</b></div>
-                <div class="summary-row total"><span>GANANCIA NETA:</span> <b>$${gananciaNeta.toFixed(2)}</b></div>
+            <div style="background:var(--beige-dark); border-radius:8px; padding:12px;">
+                <div style="display:flex; justify-content:space-between; padding:4px 0;"><span>Fecha:</span> <b>${sale.date}</b></div>
+                <div style="display:flex; justify-content:space-between; padding:4px 0;"><span>Precio Unitario:</span> <b>$${sale.price.toFixed(2)}</b></div>
+                <div style="display:flex; justify-content:space-between; padding:4px 0;"><span>Productos Vendidos:</span> <b>${totalQty} pzs</b></div>
+                <div style="display:flex; justify-content:space-between; padding:4px 0;"><span>Ventas Brutas Totales:</span> <b>$${totalBruto.toFixed(2)}</b></div>
+                <div style="display:flex; justify-content:space-between; padding:4px 0;"><span>Efectivo/Abonado Cobrado:</span> <b style="color:var(--accent-success);">$${totalCobrado.toFixed(2)}</b></div>
+                <div style="display:flex; justify-content:space-between; padding:4px 0;"><span>Pendiente por Cobrar (Deudas):</span> <b style="color:var(--accent-danger);">$${totalDeudas.toFixed(2)}</b></div>
+                <div style="display:flex; justify-content:space-between; padding:4px 0;"><span>Total de Gastos:</span> <b style="color:var(--accent-warning);">$${totalGastos.toFixed(2)}</b></div>
+                <div style="display:flex; justify-content:space-between; padding:8px 0; border-top:1px solid var(--card-border); font-weight:bold; font-size:1.05rem; margin-top:5px; color:var(--primary);"><span>GANANCIA NETA:</span> <b>$${gananciaNeta.toFixed(2)}</b></div>
             </div>
         `;
         openModal('modalReport');
@@ -1034,20 +1402,20 @@
 
     function renderDebts() {
         const container = document.getElementById('debtsContainer');
+        const filter = (document.getElementById('debtSearchInput') ? document.getElementById('debtSearchInput').value : '').toLowerCase().trim();
         const debtorMap = {};
 
         db.orders.forEach(o => {
             if (o.debt > 0) {
                 const key = o.client.toLowerCase().trim();
+                if (filter && !key.includes(filter)) return;
+
                 if (!debtorMap[key]) {
-                    debtorMap[key] = {
-                        clientName: o.client,
-                        phone: o.phone,
-                        items: []
-                    };
+                    debtorMap[key] = { clientName: o.client, phone: o.phone, items: [] };
                 }
                 const sale = db.sales.find(s => s.id === o.saleId) || { title: 'Venta', price: 0, date: '' };
                 debtorMap[key].items.push({
+                    orderId: o.id,
                     saleTitle: sale.title,
                     price: sale.price,
                     date: sale.date,
@@ -1061,7 +1429,7 @@
 
         const keys = Object.keys(debtorMap);
         if (keys.length === 0) {
-            container.innerHTML = '<p style="color:#64748b;">🎉 ¡Excelente! No hay clientes con deudas pendientes.</p>';
+            container.innerHTML = '<p style="color:#6e6057;">🎉 ¡Excelente! No hay clientes con deudas pendientes o coincidentes.</p>';
             return;
         }
 
@@ -1074,10 +1442,18 @@
             debtor.items.forEach(item => {
                 totalDebt += item.debt;
                 itemsHtml += `
-                    <div style="font-size:0.85rem; border-left:3px solid var(--warning); padding-left:8px; margin:4px 0;">
+                    <div style="font-size:0.85rem; border-left:3px solid var(--accent-warning); padding-left:8px; margin:6px 0;">
                         <b>• ${item.saleTitle}</b> (${item.date})<br>
                         Cantidad: ${item.qty} pzs x $${item.price.toFixed(2)} = Subtotal: $${item.total.toFixed(2)}<br>
-                        Abonado: $${item.abono.toFixed(2)} | <span style="color:var(--danger); font-weight:bold;">Debe: $${item.debt.toFixed(2)}</span>
+                        Abonado: $${item.abono.toFixed(2)} | <span style="color:var(--accent-danger); font-weight:bold;">Debe: $${item.debt.toFixed(2)}</span>
+                        <div style="margin-top:4px; display:flex; gap:6px;">
+                            <button class="btn-main btn-success" style="padding:4px 8px; font-size:0.75rem;" onclick="openOrderActionsModal('${item.orderId}')">
+                                💰 Abonar / Liquidar
+                            </button>
+                            <button class="btn-main btn-secondary" style="padding:4px 8px; font-size:0.75rem;" onclick="editOrder('${item.orderId}')">
+                                ✏️ Editar
+                            </button>
+                        </div>
                     </div>
                 `;
             });
@@ -1198,14 +1574,14 @@
         const gananciaNeta = totalBruto - totalGastos;
 
         container.innerHTML = `
-            <div class="summary-box">
-                <div class="summary-row"><span>Total de Eventos / Ventas:</span> <b>${targetSales.length}</b></div>
-                <div class="summary-row"><span>Cantidad de Productos Vendidos:</span> <b>${totalQty} pzs</b></div>
-                <div class="summary-row"><span>Total de Ventas Brutas:</span> <b>$${totalBruto.toFixed(2)}</b></div>
-                <div class="summary-row"><span>Dinero Cobrado en Caja:</span> <b style="color:var(--success);">$${totalCobrado.toFixed(2)}</b></div>
-                <div class="summary-row"><span>Deudas por Cobrar:</span> <b style="color:var(--danger);">$${totalDeudas.toFixed(2)}</b></div>
-                <div class="summary-row"><span>Gastos Totales:</span> <b style="color:var(--warning);">$${totalGastos.toFixed(2)}</b></div>
-                <div class="summary-row total"><span>GANANCIA NETA TOTAL:</span> <b>$${gananciaNeta.toFixed(2)}</b></div>
+            <div style="background:var(--beige-dark); border-radius:8px; padding:12px;">
+                <div style="display:flex; justify-content:space-between; padding:4px 0;"><span>Total de Eventos / Ventas:</span> <b>${targetSales.length}</b></div>
+                <div style="display:flex; justify-content:space-between; padding:4px 0;"><span>Cantidad de Productos Vendidos:</span> <b>${totalQty} pzs</b></div>
+                <div style="display:flex; justify-content:space-between; padding:4px 0;"><span>Total de Ventas Brutas:</span> <b>$${totalBruto.toFixed(2)}</b></div>
+                <div style="display:flex; justify-content:space-between; padding:4px 0;"><span>Dinero Cobrado en Caja:</span> <b style="color:var(--accent-success);">$${totalCobrado.toFixed(2)}</b></div>
+                <div style="display:flex; justify-content:space-between; padding:4px 0;"><span>Deudas por Cobrar:</span> <b style="color:var(--accent-danger);">$${totalDeudas.toFixed(2)}</b></div>
+                <div style="display:flex; justify-content:space-between; padding:4px 0;"><span>Gastos Totales:</span> <b style="color:var(--accent-warning);">$${totalGastos.toFixed(2)}</b></div>
+                <div style="display:flex; justify-content:space-between; padding:8px 0; border-top:1px solid var(--card-border); font-weight:bold; font-size:1.05rem; margin-top:5px; color:var(--primary);"><span>GANANCIA NETA TOTAL:</span> <b>$${gananciaNeta.toFixed(2)}</b></div>
             </div>
         `;
     }
