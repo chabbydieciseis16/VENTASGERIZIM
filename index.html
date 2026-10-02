@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Ventas Gerisín</title>
-    <!-- Librería para generar imagen de ticket -->
+    <title>Sistema de Ventas GeriZim v8</title>
+    <!-- Librería para generar imagen de ticket e informes -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         :root {
@@ -22,6 +22,22 @@
             --beige-dark: #e8e1d5;
         }
 
+        /* MODO OSCURO */
+        body.dark-mode {
+            --primary: #d4a373;
+            --primary-dark: #1e1b18;
+            --secondary: #a39284;
+            --bg: #121212;
+            --card-bg: #1e1e1e;
+            --card-border: #333333;
+            --text: #f5f2eb;
+            --text-light: #b0a8a0;
+            --accent-success: #52b788;
+            --accent-warning: #e07a5f;
+            --accent-danger: #e63946;
+            --beige-dark: #2a2622;
+        }
+
         * {
             box-sizing: border-box;
             margin: 0;
@@ -36,14 +52,15 @@
             justify-content: center;
             min-height: 100vh;
             padding: 10px;
+            transition: background-color 0.3s, color 0.3s;
         }
 
         .app-container {
             width: 100%;
-            max-width: 900px;
+            max-width: 950px;
             background: var(--card-bg);
             border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(60, 40, 30, 0.08);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
             display: flex;
             flex-direction: column;
             overflow: hidden;
@@ -52,19 +69,35 @@
         }
 
         header {
-            background: var(--primary);
+            background: var(--primary-dark);
             color: #fefbf6;
             padding: 15px 20px;
-            text-align: center;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
         header h1 {
-            font-size: 1.4rem;
+            font-size: 1.3rem;
             font-weight: 700;
         }
 
+        .btn-theme {
+            background: rgba(255,255,255,0.2);
+            border: 1px solid rgba(255,255,255,0.4);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
         .sync-bar {
-            background: var(--primary-dark);
+            background: var(--primary);
             color: #f5f2eb;
             padding: 8px 15px;
             font-size: 0.85rem;
@@ -91,7 +124,7 @@
         .dot.offline { background-color: #e63946; }
 
         .btn-config {
-            background: rgba(255,255,255,0.15);
+            background: rgba(255,255,255,0.2);
             border: 1px solid rgba(255,255,255,0.3);
             color: white;
             padding: 4px 10px;
@@ -154,7 +187,7 @@
             border: 1px solid var(--card-border);
             border-radius: 6px;
             font-size: 1rem;
-            background-color: #fff;
+            background-color: var(--card-bg);
             color: var(--text);
         }
 
@@ -195,7 +228,7 @@
             cursor: pointer;
             border-bottom: 3px solid transparent;
             white-space: nowrap;
-            font-size: 0.88rem;
+            font-size: 0.8rem;
         }
         .tab-btn.active {
             color: var(--primary);
@@ -203,12 +236,12 @@
         }
 
         .card {
-            background: white;
+            background: var(--card-bg);
             border: 1px solid var(--card-border);
             border-radius: 8px;
             padding: 15px;
             margin-bottom: 12px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.03);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
         }
         .card-header {
             display: flex;
@@ -260,7 +293,7 @@
             display: none;
             position: fixed;
             top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(44, 34, 30, 0.6);
+            background: rgba(0, 0, 0, 0.7);
             align-items: center;
             justify-content: center;
             z-index: 1000;
@@ -276,6 +309,7 @@
             max-height: 90vh;
             overflow-y: auto;
             border: 1px solid var(--card-border);
+            color: var(--text);
         }
 
         .back-btn {
@@ -306,7 +340,7 @@
             width: 300px;
             height: 300px;
             background: #fffdf9;
-            border: 2px solid var(--primary);
+            border: 2px solid #5c4033;
             padding: 18px;
             box-sizing: border-box;
             display: flex;
@@ -316,15 +350,99 @@
             color: #2c221e;
             font-family: 'Courier New', Courier, monospace;
         }
+
+        #notification-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .toast-notification {
+            background-color: var(--accent-success);
+            color: #ffffff;
+            padding: 12px 18px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            animation: slideIn 0.3s ease-out;
+            transition: opacity 0.5s ease;
+        }
+
+        .toast-error { background-color: var(--accent-danger); }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        /* REJILLA DE CAJAS (2 A 3 POR FILA EN PANTALLA ANCHA) */
+        .box-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            gap: 12px;
+            margin-top: 15px;
+        }
+
+        .box-card {
+            background: var(--card-bg);
+            border: 2px solid var(--primary);
+            border-radius: 10px;
+            padding: 16px;
+            text-align: center;
+            cursor: pointer;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+            transition: transform 0.15s, box-shadow 0.15s;
+        }
+
+        .box-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.1);
+        }
+
+        .box-card.active {
+            background: var(--beige-dark);
+            border-color: var(--accent-success);
+        }
+
+        .report-capture-card {
+            background: var(--card-bg);
+            border: 2px solid var(--primary);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            color: var(--text);
+        }
+
+        .order-number-badge {
+            background: var(--primary);
+            color: white;
+            font-weight: bold;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 0.8rem;
+            margin-right: 6px;
+        }
     </style>
 </head>
 <body>
 
 <datalist id="clientsDatalist"></datalist>
+<div id="notification-container"></div>
 
 <div class="app-container">
     <header>
-        <h1>Sistema de Ventas Gerisín</h1>
+        <h1>Sistema de Ventas GeriZim</h1>
+        <button class="btn-theme" onclick="toggleDarkMode()">
+            <span id="themeIcon">🌙</span> <span id="themeText">Oscuro</span>
+        </button>
     </header>
 
     <div class="sync-bar">
@@ -350,21 +468,22 @@
                     📊 Resumen de Venta por Caja
                 </button>
                 <button class="btn-main btn-debts" onclick="openDebtsPanel()">
-                    💳 Control de Deudas
+                    💳 Control de Deudas por Caja
                 </button>
             </div>
 
             <div style="margin-top: 30px;">
-                <h3 style="margin-bottom: 12px; color: var(--primary);">🔥 Ventas / Eventos Activos</h3>
+                <h3 style="margin-bottom: 12px; color: var(--primary);">🔥 Ventas / Eventos Activos (Más recientes primero)</h3>
                 <div id="openSalesList" style="display: flex; flex-direction: column; gap: 10px;"></div>
             </div>
         </div>
 
-        <!-- 2. CONFIGURAR NUEVA VENTA -->
+        <!-- 2. CONFIGURAR / EDITAR VENTA -->
         <div id="panelNewSaleConfig" class="panel">
             <button class="back-btn" onclick="showPanel('panelHome')">← Volver al Menú Principal</button>
-            <h2 style="margin-bottom: 15px; color: var(--primary);">Abrir Nueva Venta / Evento</h2>
+            <h2 id="saleFormTitle" style="margin-bottom: 15px; color: var(--primary);">Abrir Nueva Venta / Evento</h2>
             <form id="formNewSale" onsubmit="handleStartSale(event)">
+                <input type="hidden" id="editingSaleId" value="">
                 <div class="form-group">
                     <label>Título de la Venta / Producto</label>
                     <input type="text" id="saleTitle" class="form-control" placeholder="Ej. Empanadas" required>
@@ -377,15 +496,16 @@
                     <label>Fecha de la Venta</label>
                     <input type="date" id="saleDate" class="form-control" required>
                 </div>
-                <button type="submit" class="btn-main btn-success" style="width: 100%;">Comenzar Venta</button>
+                <button type="submit" id="btnSaveSaleSubmit" class="btn-main btn-success" style="width: 100%;">Comenzar Venta</button>
             </form>
         </div>
 
         <!-- 3. PANTALLA DE TRABAJO DE VENTA ACTIVA -->
         <div id="panelActiveSale" class="panel">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                <button class="back-btn" onclick="showPanel('panelHome')">← Menú Principal</button>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 8px;">
+                <button class="back-btn" style="margin-bottom:0;" onclick="showPanel('panelHome')">← Menú Principal</button>
                 <h3 id="activeSaleTitle" style="color: var(--primary);">Venta Activa</h3>
+                <button class="btn-config" style="background:var(--primary-dark); padding:6px 10px;" onclick="verifyPinAndEditSale()">✏️ Editar Venta</button>
             </div>
 
             <div style="display: flex; gap: 8px; margin-bottom: 15px; flex-wrap: wrap;">
@@ -394,44 +514,56 @@
                 <button class="btn-config" style="background: var(--primary); color: white; padding: 8px;" onclick="showCurrentSaleReport()">📋 Informe</button>
             </div>
 
-            <!-- TABS CON CATEGORIZACIÓN SEPARADA -->
+            <!-- TABS CON FLUJO Y CONTADORES -->
             <div class="tab-bar">
-                <button class="tab-btn active" onclick="switchOrderTab('unpaid')">🔴 No Pagados (<span id="countUnpaid">0</span>)</button>
-                <button class="tab-btn" onclick="switchOrderTab('paid')">🟢 Abonados / Pagados (<span id="countPaid">0</span>)</button>
+                <button class="tab-btn active" onclick="switchOrderTab('orders')">📋 Turno / Despacho (<span id="countOrders">0</span>)</button>
+                <button class="tab-btn" onclick="switchOrderTab('unpaid')">🔴 No Pagados (<span id="countUnpaid">0</span>)</button>
+                <button class="tab-btn" onclick="switchOrderTab('paid')">🟢 Abonados/Pagados (<span id="countPaid">0</span>)</button>
                 <button class="tab-btn" onclick="switchOrderTab('delivered')">📦 Entregados (<span id="countDelivered">0</span>)</button>
+                <button class="tab-btn" onclick="switchOrderTab('cancelled')">❌ Cancelados (<span id="countCancelled">0</span>)</button>
             </div>
 
-            <div id="listUnpaidOrders"></div>
+            <div id="listAllOrders"></div>
+            <div id="listUnpaidOrders" style="display: none;"></div>
             <div id="listPaidOrders" style="display: none;"></div>
             <div id="listDeliveredOrders" style="display: none;"></div>
+            <div id="listCancelledOrders" style="display: none;"></div>
         </div>
 
-        <!-- 4. CONTROL DE DEUDAS -->
+        <!-- 4. CONTROL DE DEUDAS ORGANIZADO POR CAJAS EN REJILLA -->
         <div id="panelDebts" class="panel">
             <button class="back-btn" onclick="showPanel('panelHome')">← Volver al Menú Principal</button>
-            <h2 style="margin-bottom: 15px; color: var(--primary);">💳 Control de Deudas por Cliente</h2>
+            <h2 style="margin-bottom: 15px; color: var(--primary);">💳 Control de Deudas por Cajas</h2>
+            
+            <h4 style="color:var(--primary); margin-bottom:8px;">Seleccionar Caja / Evento:</h4>
+            <div id="debtsBoxesGrid" class="box-grid" style="margin-bottom:15px;"></div>
+
             <div class="form-group">
                 <input type="text" id="debtSearchInput" class="form-control" placeholder="🔎 Buscar cliente por nombre..." oninput="renderDebts()">
             </div>
             <div id="debtsContainer"></div>
         </div>
 
-        <!-- 5. RESUMEN DE VENTA POR CAJA -->
+        <!-- 5. RESUMEN DE VENTA POR CAJA EN REJILLA -->
         <div id="panelSummary" class="panel">
             <button class="back-btn" onclick="showPanel('panelHome')">← Volver al Menú Principal</button>
             <h2 style="margin-bottom: 15px; color: var(--primary);">📊 Resumen de Venta por Caja</h2>
-            <div class="form-group">
-                <label>Seleccionar Evento / Venta:</label>
-                <select id="summarySaleSelect" class="form-control" onchange="renderSummaryDetails()">
-                    <option value="ALL">🌐 Consolidado Global (Todas las ventas)</option>
-                </select>
-            </div>
+            
+            <button class="btn-main btn-summary" style="width:100%; font-size:1.1rem; padding:16px; margin-bottom:15px;" onclick="selectSummaryBox('ALL')">
+                🌐 Resumen Consolidado (Todas las Ventas)
+            </button>
+
+            <h4 style="color:var(--primary); margin-bottom:8px;">Seleccionar Caja / Evento Específico:</h4>
+            <div id="summaryBoxesGrid" class="box-grid"></div>
+
+            <hr style="margin:20px 0; border:none; border-top:1px solid var(--card-border);">
+            <h3 id="summarySelectedBoxTitle" style="color:var(--primary); margin-bottom:10px;">Consolidado Global</h3>
             <div id="summaryDetailsContainer"></div>
         </div>
     </div>
 </div>
 
-<!-- MODAL BÚSQUEDA Y LISTADO DE CLIENTES CON PROMOCIONALES -->
+<!-- MODAL BÚSQUEDA Y LISTADO DE CLIENTES -->
 <div id="modalClientsList" class="modal">
     <div class="modal-content">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
@@ -443,7 +575,6 @@
             <input type="text" id="searchClientRoster" class="form-control" placeholder="🔎 Buscar cliente por nombre o WhatsApp..." oninput="renderClientsRoster()">
         </div>
 
-        <!-- FORMULARIO OCULTO PARA AGREGAR/EDITAR CLIENTE -->
         <div id="clientAddFormContainer" style="display: none; background: var(--beige-dark); padding: 12px; border-radius: 8px; margin-bottom: 15px;">
             <h4 id="clientFormTitle" style="margin-bottom: 8px; color: var(--primary);">Agregar Cliente</h4>
             <div class="form-group">
@@ -460,21 +591,19 @@
             </div>
         </div>
 
-        <!-- CONTENEDOR DONDE SE MUESTRAN LOS CLIENTES EXISTENTES -->
         <div id="clientsRosterList" style="display: grid; gap: 10px; max-height: 50vh; overflow-y: auto;"></div>
-
         <button class="btn-main btn-secondary" style="width: 100%; margin-top: 15px; padding: 8px;" onclick="closeModal('modalClientsList')">Cerrar Ventana</button>
     </div>
 </div>
 
-<!-- MODAL PARA ENVIAR IMAGEN PROMOCIONAL Y MENSAJE POR WHATSAPP -->
+<!-- MODAL PROMOCIONAL -->
 <div id="modalSendPromo" class="modal">
     <div class="modal-content">
         <h3 style="color: var(--primary); text-align: center;">📣 Enviar Promocional</h3>
         <p id="promoTargetClient" style="text-align: center; font-weight: bold; margin: 8px 0; font-size: 0.95rem;"></p>
 
         <div class="form-group">
-            <label>1. Seleccionar Imagen Promocional (Móvil o PC):</label>
+            <label>1. Seleccionar Imagen Promocional:</label>
             <input type="file" id="promoImageInput" accept="image/*" class="form-control" onchange="previewPromoImage(event)">
         </div>
 
@@ -484,7 +613,7 @@
 
         <div class="form-group">
             <label>2. Mensaje para el Cliente:</label>
-            <textarea id="promoMessageText" class="form-control" rows="3" placeholder="Ej. ¡Hola! Tenemos nueva venta de empanadas hoy. Te enviamos nuestro catálogo del día. 🥐"></textarea>
+            <textarea id="promoMessageText" class="form-control" rows="3" placeholder="Ej. ¡Hola! Tenemos nueva venta hoy. Te enviamos nuestro catálogo. 🥐"></textarea>
         </div>
 
         <div style="display: flex; flex-direction: column; gap: 8px;">
@@ -494,7 +623,7 @@
     </div>
 </div>
 
-<!-- MODAL EMERGENTE DE CAPTURA / EDICIÓN DE PEDIDO -->
+<!-- MODAL CAPTURA / EDICIÓN DE PEDIDO -->
 <div id="modalOrderForm" class="modal">
     <div class="modal-content">
         <h3 id="formOrderHeading" style="margin-bottom: 10px; color: var(--primary);">➕ Capturar Nuevo Pedido</h3>
@@ -521,11 +650,12 @@
                 Total Calculado: $<span id="calculatedTotal">0.00</span>
             </div>
             <div class="form-group">
-                <label>Forma de Pago Inicial</label>
+                <label>Estado del Pedido / Pago</label>
                 <select id="paymentStatus" class="form-control" onchange="toggleAbonoField()">
                     <option value="Debe" selected>🔴 Debe (Pendiente total)</option>
                     <option value="Abonó">🟡 Abonó (Parcial)</option>
                     <option value="Pagado">🟢 Pagado (Completo)</option>
+                    <option value="Cancelado">❌ Cancelado</option>
                 </select>
             </div>
             <div class="form-group" id="abonoGroup" style="display: none;">
@@ -540,13 +670,19 @@
     </div>
 </div>
 
-<!-- MODAL INTEGRADO: ABONOS / TICKET / EDICIÓN -->
+<!-- MODAL ACCIONES Y CONFIRMACIÓN WHATSAPP DE PEDIDO -->
 <div id="modalOrderActions" class="modal">
     <div class="modal-content">
         <h3 style="color: var(--primary); text-align:center;">📦 Gestión de Pedido</h3>
         <p id="actionModalClientInfo" style="margin: 10px 0; text-align:center; font-size:0.9rem; font-weight:bold;"></p>
 
-        <!-- Sección de Nuevo Abono -->
+        <!-- BOTÓN WHATSAPP AUTOMÁTICO TRAS GUARDAR PEDIDO -->
+        <div style="background:#e8f5e9; border:1px solid #a5d6a7; padding:12px; border-radius:8px; margin-bottom:15px; text-align:center;">
+            <h4 style="color:#2e7d32; margin-bottom:6px;">📲 Notificación al Cliente</h4>
+            <p style="font-size:0.8rem; color:#2e7d32; margin-bottom:8px;">Avisa al cliente que su pedido fue recibido y se atenderá en la fecha del evento después de las 7:00 PM.</p>
+            <button class="btn-main btn-success" style="width:100%; padding:10px; font-size:0.9rem;" onclick="sendOrderReceivedWhatsApp()">📲 Confirmar Pedido por WhatsApp</button>
+        </div>
+
         <div style="background: var(--beige-dark); padding: 12px; border-radius: 8px; margin-bottom: 15px;">
             <h4 style="margin-bottom: 8px; color: var(--primary);">💰 Registrar Nuevo Abono / Liquidar</h4>
             <div class="form-group" style="margin-bottom: 8px;">
@@ -555,10 +691,9 @@
             <button type="button" class="btn-main btn-success" style="width: 100%; padding: 8px; font-size: 0.9rem;" onclick="handleSaveNewAbono()">➕ Agregar Abono</button>
         </div>
 
-        <!-- Vista previa Ticket Cuadrado -->
         <div id="ticketSquareContainer">
             <div>
-                <div style="font-weight: bold; font-size: 1.05rem; text-align:center;">SISTEMA GERISÍN</div>
+                <div style="font-weight: bold; font-size: 1.05rem; text-align:center;">SISTEMA GERIZIM</div>
                 <div style="font-size: 0.7rem; border-bottom: 1px dashed #2c221e; padding-bottom: 4px; text-align:center;" id="tkDate"></div>
             </div>
             <div style="text-align: left; font-size: 0.8rem; display: grid; gap: 3px;">
@@ -577,7 +712,7 @@
 
         <div style="margin-top: 15px; display: flex; flex-direction: column; gap: 8px;">
             <button class="btn-main btn-primary" onclick="downloadTicketImage()">💾 Descargar Imagen Ticket</button>
-            <button class="btn-main btn-success" onclick="sendWhatsAppTextMessage()">📲 Enviar por WhatsApp</button>
+            <button class="btn-main btn-success" onclick="sendWhatsAppTextMessage()">📲 Enviar Comprobante por WhatsApp</button>
             <button class="btn-main btn-secondary" onclick="triggerEditFromModal()">✏️ Editar Datos del Pedido</button>
             <button class="btn-main btn-secondary" style="background:#6e6057;" onclick="closeModal('modalOrderActions')">Cerrar</button>
         </div>
@@ -615,25 +750,42 @@
         </form>
 
         <hr style="margin: 15px 0; border: none; border-top: 1px solid var(--card-border);">
-        <h4 style="margin-bottom: 8px; color: var(--primary);">Gastos Realizados:</h4>
-        <div id="modalExpensesList"></div>
+        <div id="expensesCaptureContainer">
+            <h4 style="margin-bottom: 8px; color: var(--primary);">Gastos Realizados:</h4>
+            <div id="modalExpensesList"></div>
+        </div>
 
-        <button type="button" class="btn-main btn-secondary" style="width: 100%; margin-top: 15px; padding: 8px;" onclick="closeModal('modalExpenses')">Cerrar Ventana</button>
+        <div style="display:flex; flex-direction:column; gap:8px; margin-top:15px;">
+            <button type="button" class="btn-main btn-primary" onclick="downloadExpensesImage()">📸 Descargar Imagen de Gastos</button>
+            <button type="button" class="btn-main btn-secondary" onclick="closeModal('modalExpenses')">Cerrar Ventana</button>
+        </div>
     </div>
 </div>
 
-<!-- MODAL INFORME -->
+<!-- MODAL INFORME CON CAPTURA -->
 <div id="modalReport" class="modal">
     <div class="modal-content">
-        <h3 id="reportTitle" style="color: var(--primary);">Informe de Venta</h3>
-        <div id="reportContent" style="margin: 15px 0;"></div>
-        <button class="btn-main btn-secondary" style="width: 100%; padding: 8px;" onclick="closeModal('modalReport')">Cerrar</button>
+        <h3 id="reportTitle" style="color: var(--primary); text-align:center;">Informe de Venta</h3>
+        
+        <div id="reportCaptureContainer" class="report-capture-card" style="margin: 15px 0;">
+            <div style="text-align:center; font-weight:bold; font-size:1.1rem; color:var(--primary); border-bottom:1px solid var(--card-border); padding-bottom:8px; margin-bottom:10px;">
+                SISTEMA GERIZIM
+            </div>
+            <div id="reportContent"></div>
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:8px;">
+            <button class="btn-main btn-primary" onclick="downloadReportImage()">📸 Descargar Imagen de Informe</button>
+            <button class="btn-main btn-secondary" onclick="closeModal('modalReport')">Cerrar</button>
+        </div>
     </div>
 </div>
 
 <script>
+    const DEFAULT_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzCJwLqaG_bNoFgAhgDcxmNkv_0MJBZ0XvoHy7bFMdYv2el_mEsS2XzdzIraiG8Ezqy/exec';
+
     let db = {
-        config: { scriptUrl: '' },
+        config: { scriptUrl: DEFAULT_SCRIPT_URL },
         sales: [],
         orders: [],
         expenses: [],
@@ -643,6 +795,8 @@
     let currentSaleId = null;
     let selectedOrderForAction = null;
     let selectedPromoClient = null;
+    let selectedSummaryBoxId = 'ALL';
+    let selectedDebtBoxId = 'ALL';
 
     window.onload = function() {
         loadLocalStorage();
@@ -652,6 +806,27 @@
         updateClientsDatalist();
         if (db.config.scriptUrl) fetchFromSheets();
     };
+
+    function toggleDarkMode() {
+        document.body.classList.toggle('dark-mode');
+        const isDark = document.body.classList.contains('dark-mode');
+        document.getElementById('themeIcon').innerText = isDark ? '☀️' : '🌙';
+        document.getElementById('themeText').innerText = isDark ? 'Claro' : 'Oscuro';
+        localStorage.setItem('gerisin_theme', isDark ? 'dark' : 'light');
+    }
+
+    function mostrarNotificacion(mensaje, tipo = 'exito') {
+        const container = document.getElementById('notification-container');
+        const toast = document.createElement('div');
+        toast.className = `toast-notification ${tipo === 'error' ? 'toast-error' : ''}`;
+        toast.innerHTML = (tipo === 'exito' ? '✅ ' : '⚠ ') + mensaje;
+        container.appendChild(toast);
+
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            setTimeout(() => toast.remove(), 500);
+        }, 3500);
+    }
 
     function setTodayDate() {
         const today = new Date().toISOString().split('T')[0];
@@ -664,8 +839,16 @@
             try { db = JSON.parse(data); } catch(e){}
         }
         if (!db.clients) db.clients = {};
-        if (db.config && db.config.scriptUrl) {
-            document.getElementById('sheetsWebUrl').value = db.config.scriptUrl;
+        if (!db.config || !db.config.scriptUrl) {
+            db.config = { scriptUrl: DEFAULT_SCRIPT_URL };
+        }
+        document.getElementById('sheetsWebUrl').value = db.config.scriptUrl;
+
+        const theme = localStorage.getItem('gerisin_theme');
+        if (theme === 'dark') {
+            document.body.classList.add('dark-mode');
+            document.getElementById('themeIcon').innerText = '☀️';
+            document.getElementById('themeText').innerText = 'Claro';
         }
     }
 
@@ -713,9 +896,13 @@
                     saveLocalStorage();
                     renderOpenSalesList();
                     if (currentSaleId) renderOrdersList();
+                    mostrarNotificacion("Datos sincronizados con Google Sheets", "exito");
                 }
             })
-            .catch(err => console.log('Error descargando de Sheets:', err));
+            .catch(err => {
+                console.log('Error descargando de Sheets:', err);
+                mostrarNotificacion("Error de conexión al cargar de Sheets", "error");
+            });
     }
 
     function updateClientsDatalist() {
@@ -751,6 +938,23 @@
         }
     }
 
+    function verifyPinAndEditSale() {
+        const pin = prompt("Ingresa el PIN (4321) para modificar esta venta:");
+        if (pin === "4321") {
+            const sale = db.sales.find(s => s.id === currentSaleId);
+            if (!sale) return;
+            document.getElementById('editingSaleId').value = sale.id;
+            document.getElementById('saleTitle').value = sale.title;
+            document.getElementById('salePrice').value = sale.price;
+            document.getElementById('saleDate').value = sale.date;
+            document.getElementById('saleFormTitle').innerText = '✏️ Modificar Configuración de la Venta';
+            document.getElementById('btnSaveSaleSubmit').innerText = '💾 Actualizar Venta';
+            showPanel('panelNewSaleConfig');
+        } else if (pin !== null) {
+            alert("❌ PIN incorrecto.");
+        }
+    }
+
     function showPanel(panelId) {
         document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
         document.getElementById(panelId).classList.add('active');
@@ -769,11 +973,8 @@
     function renderClientsRoster() {
         const container = document.getElementById('clientsRosterList');
         const filter = document.getElementById('searchClientRoster') ? document.getElementById('searchClientRoster').value.toLowerCase().trim() : '';
-
-        // CONSTRUIR MAPA UNIFICADO DE CLIENTES EXISTENTES (DESDE PEDIDOS + DICCIONARIO)
         const allClientsMap = {};
 
-        // 1. Extraer desde historial de pedidos
         db.orders.forEach(o => {
             if (o.client) {
                 const key = o.client.trim().toLowerCase();
@@ -788,7 +989,6 @@
             }
         });
 
-        // 2. Extraer desde catálogo registrado
         Object.keys(db.clients).forEach(key => {
             if (!allClientsMap[key]) {
                 allClientsMap[key] = {
@@ -856,9 +1056,7 @@
         const key = name.toLowerCase();
         db.clients[key] = phone;
         saveLocalStorage();
-
         syncItem({ type: 'CLIENT', name: name, phone: phone });
-
         closeClientAddForm();
         renderClientsRoster();
     }
@@ -869,7 +1067,6 @@
             const key = clientName.toLowerCase();
             db.clients[key] = newPhone.trim();
             saveLocalStorage();
-
             syncItem({ type: 'CLIENT', name: clientName, phone: newPhone.trim() });
             renderClientsRoster();
         }
@@ -880,7 +1077,7 @@
         document.getElementById('promoTargetClient').innerText = `Cliente: ${clientName} (${clientPhone || 'Sin número'})`;
         document.getElementById('promoImageInput').value = '';
         document.getElementById('promoImagePreviewContainer').style.display = 'none';
-        document.getElementById('promoMessageText').value = `¡Hola *${clientName}*! Te compartimos nuestra nueva oferta y catálogo del día. 🥐😊`;
+        document.getElementById('promoMessageText').value = `¡Hola *${clientName}*! Te compartimos nuestra nueva oferta del día. 🥐😊`;
         openModal('modalSendPromo');
     }
 
@@ -900,11 +1097,9 @@
         if (!selectedPromoClient) return;
         const msg = document.getElementById('promoMessageText').value;
         const cleanPhone = selectedPromoClient.phone ? selectedPromoClient.phone.replace(/\D/g, '') : '';
-
         const url = cleanPhone 
             ? `https://wa.me/52${cleanPhone}?text=${encodeURIComponent(msg)}`
             : `https://wa.me/?text=${encodeURIComponent(msg)}`;
-
         window.open(url, '_blank');
         closeModal('modalSendPromo');
     }
@@ -922,10 +1117,16 @@
         if (!db.config.scriptUrl) return;
         fetch(db.config.scriptUrl, {
             method: 'POST',
-            mode: 'no-cors',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
             body: JSON.stringify(payload)
-        }).catch(err => console.log('Sync error:', err));
+        })
+        .then(() => {
+            mostrarNotificacion("¡Registro guardado y sincronizado!", "exito");
+        })
+        .catch(err => {
+            console.log('Sync error:', err);
+            mostrarNotificacion("Guardado en local (sin conexión con Sheet)", "error");
+        });
     }
 
     function renderOpenSalesList() {
@@ -935,15 +1136,17 @@
             return;
         }
 
-        container.innerHTML = db.sales.map(s => {
-            const saleOrders = db.orders.filter(o => o.saleId === s.id);
+        const sortedSales = [...db.sales].sort((a, b) => new Date(b.date) - new Date(a.date));
+
+        container.innerHTML = sortedSales.map(s => {
+            const saleOrders = db.orders.filter(o => o.saleId === s.id && o.status !== 'Cancelado');
             const pendingQty = saleOrders.filter(o => !o.delivered).length;
             return `
                 <div class="card" style="cursor:pointer;" onclick="openExistingSale('${s.id}')">
                     <div style="display:flex; justify-content:space-between; align-items:center;">
                         <div>
                             <div style="font-size:1.05rem; color:var(--primary);">🏷️ <b>${s.title}</b> ($${s.price.toFixed(2)})</div>
-                            <div style="font-size:0.8rem; color:#6e6057;">📅 ${s.date} | Pedidos: ${saleOrders.length} (${pendingQty} pendientes)</div>
+                            <div style="font-size:0.8rem; color:var(--text-light);">📅 Fecha: ${s.date} | Pedidos Activos: ${saleOrders.length} (${pendingQty} pendientes)</div>
                         </div>
                         <span style="color:var(--primary); font-size:1.2rem;">➔</span>
                     </div>
@@ -959,29 +1162,42 @@
 
     function openNewSaleConfig() {
         setTodayDate();
+        document.getElementById('editingSaleId').value = '';
         document.getElementById('saleTitle').value = '';
         document.getElementById('salePrice').value = '';
+        document.getElementById('saleFormTitle').innerText = 'Abrir Nueva Venta / Evento';
+        document.getElementById('btnSaveSaleSubmit').innerText = 'Comenzar Venta';
         showPanel('panelNewSaleConfig');
     }
 
     function handleStartSale(e) {
         e.preventDefault();
+        const editingId = document.getElementById('editingSaleId').value;
         const title = document.getElementById('saleTitle').value.trim();
         const price = parseFloat(document.getElementById('salePrice').value);
         const date = document.getElementById('saleDate').value;
 
-        const newSale = {
-            id: 'SALE_' + Date.now(),
-            title: title,
-            price: price,
-            date: date
-        };
+        if (editingId) {
+            const sale = db.sales.find(s => s.id === editingId);
+            if (sale) {
+                sale.title = title;
+                sale.price = price;
+                sale.date = date;
+                syncItem({ type: 'SALE', ...sale });
+            }
+        } else {
+            const newSale = {
+                id: 'SALE_' + Date.now(),
+                title: title,
+                price: price,
+                date: date
+            };
+            db.sales.push(newSale);
+            syncItem({ type: 'SALE', ...newSale });
+            currentSaleId = newSale.id;
+        }
 
-        db.sales.push(newSale);
         saveLocalStorage();
-        syncItem({ type: 'SALE', ...newSale });
-
-        currentSaleId = newSale.id;
         loadActiveSaleScreen();
     }
 
@@ -1035,9 +1251,9 @@
 
         if (status === 'Pagado') abono = total;
         else if (status === 'Abonó') abono = parseFloat(document.getElementById('abonoAmount').value) || 0;
-        else if (status === 'Debe') abono = 0;
+        else if (status === 'Debe' || status === 'Cancelado') abono = 0;
 
-        const debt = Math.max(0, total - abono);
+        const debt = status === 'Cancelado' ? 0 : Math.max(0, total - abono);
 
         if (client) {
             const clientKey = client.toLowerCase();
@@ -1045,7 +1261,8 @@
             else if (!db.clients[clientKey]) db.clients[clientKey] = '';
         }
 
-        const nowStr = new Date().toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' });
+        const now = new Date();
+        const nowStr = now.toLocaleDateString('es-MX') + ' ' + now.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
 
         if (editingId) {
             const order = db.orders.find(o => o.id === editingId);
@@ -1071,7 +1288,8 @@
                 abono: abono,
                 debt: debt,
                 delivered: false,
-                datetime: nowStr
+                datetime: nowStr,
+                timestamp: Date.now()
             };
             db.orders.push(newOrder);
             syncItem({ type: 'ORDER', ...newOrder });
@@ -1121,7 +1339,7 @@
         const sale = db.sales.find(s => s.id === order.saleId);
         selectedOrderForAction = { order, sale };
 
-        document.getElementById('actionModalClientInfo').innerText = `${order.client} - Pendiente: $${order.debt.toFixed(2)}`;
+        document.getElementById('actionModalClientInfo').innerText = `${order.client} - Pendiente: $${order.debt.toFixed(2)} (${order.status})`;
         document.getElementById('newAbonoAmount').value = '';
 
         document.getElementById('tkDate').innerText = order.datetime || new Date().toLocaleString();
@@ -1136,12 +1354,28 @@
         openModal('modalOrderActions');
     }
 
+    function sendOrderReceivedWhatsApp() {
+        if (!selectedOrderForAction) return;
+        const { order, sale } = selectedOrderForAction;
+        const dateStr = sale ? sale.date : 'la fecha del evento';
+
+        let msg = `Hola *${order.client}*, ¡tu pedido de *${sale ? sale.title : 'tu compra'}* (${order.qty} pzs) ha sido recibido con éxito! 🥐✅\n\n`;
+        msg += `🗓️ *Fecha del evento:* ${dateStr}\n`;
+        msg += `🕖 *Atención:* Tu pedido será atendido el día del evento después de las 7:00 PM.\n`;
+        msg += `💵 *Total:* $${order.total.toFixed(2)} (Abonado: $${order.abono.toFixed(2)} | Saldo: $${order.debt.toFixed(2)})\n\n`;
+        msg += `¡Muchas gracias por tu preferencia en *Sistema GeriZim*!`;
+
+        const cleanPhone = order.phone ? order.phone.replace(/\D/g, '') : '';
+        const url = cleanPhone ? `https://wa.me/52${cleanPhone}?text=${encodeURIComponent(msg)}` : `https://wa.me/?text=${encodeURIComponent(msg)}`;
+        window.open(url, '_blank');
+    }
+
     function handleSaveNewAbono() {
         if (!selectedOrderForAction) return;
         const addAmount = parseFloat(document.getElementById('newAbonoAmount').value) || 0;
         const { order } = selectedOrderForAction;
 
-        if (addAmount > 0) {
+        if (addAmount > 0 && order.status !== 'Cancelado') {
             order.abono += addAmount;
             order.debt = Math.max(0, order.total - order.abono);
 
@@ -1169,19 +1403,27 @@
 
     function switchOrderTab(tab) {
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById('listAllOrders').style.display = 'none';
         document.getElementById('listUnpaidOrders').style.display = 'none';
         document.getElementById('listPaidOrders').style.display = 'none';
         document.getElementById('listDeliveredOrders').style.display = 'none';
+        document.getElementById('listCancelledOrders').style.display = 'none';
 
-        if (tab === 'unpaid') {
+        if (tab === 'orders') {
             document.querySelectorAll('.tab-btn')[0].classList.add('active');
+            document.getElementById('listAllOrders').style.display = 'block';
+        } else if (tab === 'unpaid') {
+            document.querySelectorAll('.tab-btn')[1].classList.add('active');
             document.getElementById('listUnpaidOrders').style.display = 'block';
         } else if (tab === 'paid') {
-            document.querySelectorAll('.tab-btn')[1].classList.add('active');
-            document.getElementById('listPaidOrders').style.display = 'block';
-        } else {
             document.querySelectorAll('.tab-btn')[2].classList.add('active');
+            document.getElementById('listPaidOrders').style.display = 'block';
+        } else if (tab === 'delivered') {
+            document.querySelectorAll('.tab-btn')[3].classList.add('active');
             document.getElementById('listDeliveredOrders').style.display = 'block';
+        } else {
+            document.querySelectorAll('.tab-btn')[4].classList.add('active');
+            document.getElementById('listCancelledOrders').style.display = 'block';
         }
     }
 
@@ -1192,6 +1434,35 @@
             saveLocalStorage();
             syncItem({ type: 'ORDER', ...order });
             renderOrdersList();
+        }
+    }
+
+    function markOrderCancelled(orderId) {
+        const order = db.orders.find(o => o.id === orderId);
+        if (order) {
+            order.status = 'Cancelado';
+            order.debt = 0;
+            saveLocalStorage();
+            syncItem({ type: 'ORDER', ...order });
+            renderOrdersList();
+            mostrarNotificacion("Pedido marcado como cancelado", "error");
+        }
+    }
+
+    function reactivateOrder(orderId) {
+        const order = db.orders.find(o => o.id === orderId);
+        if (order) {
+            if (order.abono > 0) {
+                order.status = 'Abonó';
+                order.debt = Math.max(0, order.total - order.abono);
+            } else {
+                order.status = 'Debe';
+                order.debt = order.total;
+            }
+            saveLocalStorage();
+            syncItem({ type: 'ORDER', ...order });
+            renderOrdersList();
+            mostrarNotificacion("¡Pedido reactivado con éxito!", "exito");
         }
     }
 
@@ -1219,6 +1490,26 @@
         });
     }
 
+    function downloadReportImage() {
+        const container = document.getElementById('reportCaptureContainer');
+        html2canvas(container, { scale: 2 }).then(canvas => {
+            const link = document.createElement('a');
+            link.download = `Informe_Venta_${Date.now()}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        });
+    }
+
+    function downloadExpensesImage() {
+        const container = document.getElementById('expensesCaptureContainer');
+        html2canvas(container, { scale: 2 }).then(canvas => {
+            const link = document.createElement('a');
+            link.download = `Reporte_Gastos_${Date.now()}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        });
+    }
+
     function sendWhatsAppTextMessage() {
         if (!selectedOrderForAction) return;
         const { order, sale } = selectedOrderForAction;
@@ -1228,78 +1519,104 @@
         msg += `• Estado de Pago: ${order.status}\n`;
         msg += `• Abonado: $${order.abono.toFixed(2)}\n`;
         msg += `• Restante por pagar: $${order.debt.toFixed(2)}\n\n`;
-        msg += `¡Muchas gracias por tu compra!`;
+        msg += `¡Muchas gracias por tu compra en *Sistema GeriZim*!`;
 
         const cleanPhone = order.phone ? order.phone.replace(/\D/g, '') : '';
         const url = cleanPhone ? `https://wa.me/52${cleanPhone}?text=${encodeURIComponent(msg)}` : `https://wa.me/?text=${encodeURIComponent(msg)}`;
         window.open(url, '_blank');
     }
 
+    // RENDERIZADO DE PEDIDOS ORDENADOS DEL MÁS ANTIGUO AL MÁS RECIENTE (ORDEN DE LLEGADA)
     function renderOrdersList() {
+        const allContainer = document.getElementById('listAllOrders');
         const unpaidContainer = document.getElementById('listUnpaidOrders');
         const paidContainer = document.getElementById('listPaidOrders');
         const deliveredContainer = document.getElementById('listDeliveredOrders');
+        const cancelledContainer = document.getElementById('listCancelledOrders');
 
+        // Orden cronológico inverso (Del más antiguo al más reciente)
         const activeOrders = db.orders.filter(o => o.saleId === currentSaleId)
             .sort((a, b) => {
-                const idA = parseInt(a.id.replace('ORD_', '')) || 0;
-                const idB = parseInt(b.id.replace('ORD_', '')) || 0;
-                return idB - idA;
+                const timeA = a.timestamp || parseInt(a.id.replace('ORD_', '')) || 0;
+                const timeB = b.timestamp || parseInt(b.id.replace('ORD_', '')) || 0;
+                return timeA - timeB;
             });
 
-        const unpaid = activeOrders.filter(o => !o.delivered && o.debt > 0);
-        const paid = activeOrders.filter(o => !o.delivered && o.debt === 0);
-        const delivered = activeOrders.filter(o => o.delivered);
+        const allOrders = activeOrders.filter(o => o.status !== 'Cancelado');
+        const unpaid = activeOrders.filter(o => !o.delivered && o.debt > 0 && o.status !== 'Cancelado');
+        const paid = activeOrders.filter(o => !o.delivered && o.debt === 0 && o.status !== 'Cancelado');
+        const delivered = activeOrders.filter(o => o.delivered && o.status !== 'Cancelado');
+        const cancelled = activeOrders.filter(o => o.status === 'Cancelado');
 
+        document.getElementById('countOrders').innerText = allOrders.length;
         document.getElementById('countUnpaid').innerText = unpaid.length;
         document.getElementById('countPaid').innerText = paid.length;
         document.getElementById('countDelivered').innerText = delivered.length;
+        document.getElementById('countCancelled').innerText = cancelled.length;
 
+        const sumAll = allOrders.reduce((sum, o) => sum + o.total, 0);
         const sumUnpaid = unpaid.reduce((sum, o) => sum + o.debt, 0);
         const sumPaid = paid.reduce((sum, o) => sum + o.total, 0);
         const sumDelivered = delivered.reduce((sum, o) => sum + o.total, 0);
 
-        const renderCard = (o) => {
+        const renderCard = (o, index) => {
             let badgeClass = 'badge-success';
             if (o.status === 'Abonó') badgeClass = 'badge-warning';
             if (o.status === 'Debe') badgeClass = 'badge-danger';
+            if (o.status === 'Cancelado') badgeClass = 'badge-danger';
 
             return `
-                <div class="card">
+                <div class="card" style="${o.status === 'Cancelado' ? 'opacity:0.6; background:var(--beige-dark);' : ''}">
                     <div class="card-header">
-                        <span class="card-title">${o.client}</span>
+                        <span class="card-title"><span class="order-number-badge">#${index + 1}</span>${o.client}</span>
                         <span class="badge ${badgeClass}">${o.status}</span>
                     </div>
                     <div class="card-body">
                         <div>📦 Pedido: <b>${o.qty} pzs</b> ($${o.total.toFixed(2)})</div>
                         <div>💵 Abonado: $${o.abono.toFixed(2)} | Pendiente: <b style="color:var(--accent-danger);">$${o.debt.toFixed(2)}</b></div>
                         ${o.phone ? `<div>📱 Tel: ${o.phone}</div>` : ''}
-                        <div style="font-size:0.75rem; color:var(--text-light); margin-top:2px;">🕒 ${o.datetime || ''}</div>
+                        <div style="font-size:0.75rem; color:var(--text-light); margin-top:2px;">🕒 Capturado: <b>${o.datetime || 'Sin fecha'}</b></div>
                     </div>
                     <div class="card-actions">
-                        <label class="checkbox-container">
-                            <input type="checkbox" ${o.delivered ? 'checked' : ''} onchange="toggleDeliveryStatus('${o.id}')">
-                            Atendido
-                        </label>
-                        <button type="button" class="btn-main btn-primary" style="padding: 5px 8px; font-size: 0.8rem;" onclick="openOrderActionsModal('${o.id}')">
-                            💰 Abonos / Ticket / Editar
-                        </button>
-                        <button type="button" class="btn-main" style="padding: 5px 8px; font-size: 0.8rem; background:#2a9d8f;" onclick="sendOnTheWayMessage('${o.id}')">
-                            🚴 En camino
-                        </button>
+                        ${o.status !== 'Cancelado' ? `
+                            <label class="checkbox-container">
+                                <input type="checkbox" ${o.delivered ? 'checked' : ''} onchange="toggleDeliveryStatus('${o.id}')">
+                                Atendido / Entregado
+                            </label>
+                            <button type="button" class="btn-main btn-primary" style="padding: 5px 8px; font-size: 0.8rem;" onclick="openOrderActionsModal('${o.id}')">
+                                💰 Abonos / Ticket
+                            </button>
+                            <button type="button" class="btn-main" style="padding: 5px 8px; font-size: 0.8rem; background:#2a9d8f;" onclick="sendOnTheWayMessage('${o.id}')">
+                                🚴 En camino
+                            </button>
+                            <button type="button" class="btn-main btn-danger" style="padding: 5px 8px; font-size: 0.8rem;" onclick="markOrderCancelled('${o.id}')">
+                                ❌ Cancelar
+                            </button>
+                        ` : `
+                            <b style="color:var(--accent-danger);">❌ Pedido Cancelado</b>
+                            <button type="button" class="btn-main btn-success" style="padding: 5px 8px; font-size: 0.8rem;" onclick="reactivateOrder('${o.id}')">
+                                🔄 Re-activar Pedido
+                            </button>
+                        `}
                     </div>
                 </div>
             `;
         };
 
+        allContainer.innerHTML = `<div class="category-summary"><span>Total de Pedidos en Turno:</span> <span>$${sumAll.toFixed(2)}</span></div>` +
+            (allOrders.length ? allOrders.map((o, idx) => renderCard(o, idx)).join('') : '<p style="color:#6e6057;">No hay pedidos en esta venta.</p>');
+
         unpaidContainer.innerHTML = `<div class="category-summary"><span>Total por Cobrar (Deudas):</span> <span>$${sumUnpaid.toFixed(2)}</span></div>` +
-            (unpaid.length ? unpaid.map(renderCard).join('') : '<p style="color:#6e6057;">No hay pedidos pendientes de pago.</p>');
+            (unpaid.length ? unpaid.map((o, idx) => renderCard(o, idx)).join('') : '<p style="color:#6e6057;">No hay pedidos pendientes de pago.</p>');
 
         paidContainer.innerHTML = `<div class="category-summary"><span>Total Cobrado (Completos):</span> <span>$${sumPaid.toFixed(2)}</span></div>` +
-            (paid.length ? paid.map(renderCard).join('') : '<p style="color:#6e6057;">No hay pedidos pagados pendientes de entrega.</p>');
+            (paid.length ? paid.map((o, idx) => renderCard(o, idx)).join('') : '<p style="color:#6e6057;">No hay pedidos pagados pendientes de entrega.</p>');
 
         deliveredContainer.innerHTML = `<div class="category-summary"><span>Total Pedidos Entregados:</span> <span>$${sumDelivered.toFixed(2)}</span></div>` +
-            (delivered.length ? delivered.map(renderCard).join('') : '<p style="color:#6e6057;">No hay pedidos entregados.</p>');
+            (delivered.length ? delivered.map((o, idx) => renderCard(o, idx)).join('') : '<p style="color:#6e6057;">No hay pedidos entregados.</p>');
+
+        cancelledContainer.innerHTML = `<div class="category-summary"><span>Total Cancelados:</span> <span>${cancelled.length} pedidos</span></div>` +
+            (cancelled.length ? cancelled.map((o, idx) => renderCard(o, idx)).join('') : '<p style="color:#6e6057;">No hay pedidos cancelados.</p>');
     }
 
     function openExpensesModal() {
@@ -1359,7 +1676,7 @@
 
     function showCurrentSaleReport() {
         const sale = db.sales.find(s => s.id === currentSaleId);
-        const orders = db.orders.filter(o => o.saleId === currentSaleId);
+        const orders = db.orders.filter(o => o.saleId === currentSaleId && o.status !== 'Cancelado');
         const expenses = db.expenses.filter(e => e.saleId === currentSaleId);
 
         let totalQty = 0;
@@ -1381,15 +1698,15 @@
 
         document.getElementById('reportTitle').innerText = `Informe: ${sale.title}`;
         document.getElementById('reportContent').innerHTML = `
-            <div style="background:var(--beige-dark); border-radius:8px; padding:12px;">
-                <div style="display:flex; justify-content:space-between; padding:4px 0;"><span>Fecha:</span> <b>${sale.date}</b></div>
-                <div style="display:flex; justify-content:space-between; padding:4px 0;"><span>Precio Unitario:</span> <b>$${sale.price.toFixed(2)}</b></div>
-                <div style="display:flex; justify-content:space-between; padding:4px 0;"><span>Productos Vendidos:</span> <b>${totalQty} pzs</b></div>
-                <div style="display:flex; justify-content:space-between; padding:4px 0;"><span>Ventas Brutas Totales:</span> <b>$${totalBruto.toFixed(2)}</b></div>
-                <div style="display:flex; justify-content:space-between; padding:4px 0;"><span>Efectivo/Abonado Cobrado:</span> <b style="color:var(--accent-success);">$${totalCobrado.toFixed(2)}</b></div>
-                <div style="display:flex; justify-content:space-between; padding:4px 0;"><span>Pendiente por Cobrar (Deudas):</span> <b style="color:var(--accent-danger);">$${totalDeudas.toFixed(2)}</b></div>
-                <div style="display:flex; justify-content:space-between; padding:4px 0;"><span>Total de Gastos:</span> <b style="color:var(--accent-warning);">$${totalGastos.toFixed(2)}</b></div>
-                <div style="display:flex; justify-content:space-between; padding:8px 0; border-top:1px solid var(--card-border); font-weight:bold; font-size:1.05rem; margin-top:5px; color:var(--primary);"><span>GANANCIA NETA:</span> <b>$${gananciaNeta.toFixed(2)}</b></div>
+            <div style="display:grid; gap:8px;">
+                <div style="display:flex; justify-content:space-between;"><span>Fecha de la Venta:</span> <b>${sale.date}</b></div>
+                <div style="display:flex; justify-content:space-between;"><span>Precio Unitario:</span> <b>$${sale.price.toFixed(2)}</b></div>
+                <div style="display:flex; justify-content:space-between;"><span>Productos Vendidos:</span> <b>${totalQty} pzs</b></div>
+                <div style="display:flex; justify-content:space-between;"><span>Ventas Brutas Totales:</span> <b>$${totalBruto.toFixed(2)}</b></div>
+                <div style="display:flex; justify-content:space-between;"><span>Efectivo Cobrado:</span> <b style="color:var(--accent-success);">$${totalCobrado.toFixed(2)}</b></div>
+                <div style="display:flex; justify-content:space-between;"><span>Deudas por Cobrar:</span> <b style="color:var(--accent-danger);">$${totalDeudas.toFixed(2)}</b></div>
+                <div style="display:flex; justify-content:space-between;"><span>Gastos Totales:</span> <b style="color:var(--accent-warning);">$${totalGastos.toFixed(2)}</b></div>
+                <div style="display:flex; justify-content:space-between; border-top:1px dashed var(--primary); padding-top:8px; font-weight:bold; font-size:1.1rem; color:var(--primary);"><span>GANANCIA NETA:</span> <b>$${gananciaNeta.toFixed(2)}</b></div>
             </div>
         `;
         openModal('modalReport');
@@ -1397,6 +1714,28 @@
 
     function openDebtsPanel() {
         showPanel('panelDebts');
+        renderDebtsGridBoxes();
+        selectDebtBox('ALL');
+    }
+
+    function renderDebtsGridBoxes() {
+        const grid = document.getElementById('debtsBoxesGrid');
+        grid.innerHTML = `
+            <div class="box-card ${selectedDebtBoxId === 'ALL' ? 'active' : ''}" onclick="selectDebtBox('ALL')">
+                <div style="font-size:1rem; font-weight:bold; color:var(--primary);">🌐 Todas las Cajas</div>
+                <div style="font-size:0.75rem; color:var(--text-light); margin-top:4px;">Ver deudas globales</div>
+            </div>
+        ` + db.sales.map(s => `
+            <div class="box-card ${selectedDebtBoxId === s.id ? 'active' : ''}" onclick="selectDebtBox('${s.id}')">
+                <div style="font-size:1rem; font-weight:bold; color:var(--primary);">📦 ${s.title}</div>
+                <div style="font-size:0.75rem; color:var(--text-light); margin-top:4px;">📅 ${s.date}</div>
+            </div>
+        `).join('');
+    }
+
+    function selectDebtBox(boxId) {
+        selectedDebtBoxId = boxId;
+        renderDebtsGridBoxes();
         renderDebts();
     }
 
@@ -1406,7 +1745,9 @@
         const debtorMap = {};
 
         db.orders.forEach(o => {
-            if (o.debt > 0) {
+            if (o.debt > 0 && o.status !== 'Cancelado') {
+                if (selectedDebtBoxId !== 'ALL' && o.saleId !== selectedDebtBoxId) return;
+
                 const key = o.client.toLowerCase().trim();
                 if (filter && !key.includes(filter)) return;
 
@@ -1429,7 +1770,7 @@
 
         const keys = Object.keys(debtorMap);
         if (keys.length === 0) {
-            container.innerHTML = '<p style="color:#6e6057;">🎉 ¡Excelente! No hay clientes con deudas pendientes o coincidentes.</p>';
+            container.innerHTML = '<p style="color:#6e6057; text-align:center; padding:15px;">🎉 ¡Excelente! No hay clientes con deudas pendientes en esta caja.</p>';
             return;
         }
 
@@ -1482,7 +1823,7 @@
     function sendDebtReminderWhatsApp(debtorKey) {
         const debtorMap = {};
         db.orders.forEach(o => {
-            if (o.debt > 0) {
+            if (o.debt > 0 && o.status !== 'Cancelado') {
                 const key = o.client.toLowerCase().trim();
                 if (!debtorMap[key]) {
                     debtorMap[key] = { clientName: o.client, phone: o.phone, items: [] };
@@ -1507,7 +1848,7 @@
         let totalAbonado = 0;
         let totalPendiente = 0;
 
-        let msg = `Hola *${debtor.clientName}*, te saludamos de *Sistema de Ventas Gerisín*.\n`;
+        let msg = `Hola *${debtor.clientName}*, te saludamos de *Sistema de Ventas GeriZim*.\n`;
         msg += `Te compartimos el detalle de tu saldo pendiente:\n\n`;
 
         debtor.items.forEach(item => {
@@ -1534,21 +1875,37 @@
 
     function openSummaryPanel() {
         showPanel('panelSummary');
-        const select = document.getElementById('summarySaleSelect');
-        select.innerHTML = '<option value="ALL">🌐 Consolidado Global (Todas las ventas)</option>';
-        db.sales.forEach(s => {
-            select.innerHTML += `<option value="${s.id}">${s.title} (${s.date})</option>`;
-        });
+        renderSummaryGridBoxes();
+        selectSummaryBox('ALL');
+    }
+
+    function renderSummaryGridBoxes() {
+        const grid = document.getElementById('summaryBoxesGrid');
+        grid.innerHTML = db.sales.map(s => `
+            <div class="box-card ${selectedSummaryBoxId === s.id ? 'active' : ''}" onclick="selectSummaryBox('${s.id}')">
+                <div style="font-size:1.1rem; font-weight:bold; color:var(--primary);">📦 ${s.title}</div>
+                <div style="font-size:0.8rem; color:var(--text-light); margin-top:4px;">📅 ${s.date} | Unitario: $${s.price.toFixed(2)}</div>
+            </div>
+        `).join('');
+    }
+
+    function selectSummaryBox(boxId) {
+        selectedSummaryBoxId = boxId;
+        renderSummaryGridBoxes();
         renderSummaryDetails();
     }
 
     function renderSummaryDetails() {
-        const selectValue = document.getElementById('summarySaleSelect').value;
         const container = document.getElementById('summaryDetailsContainer');
+        const titleEl = document.getElementById('summarySelectedBoxTitle');
 
         let targetSales = db.sales;
-        if (selectValue !== 'ALL') {
-            targetSales = db.sales.filter(s => s.id === selectValue);
+        if (selectedSummaryBoxId !== 'ALL') {
+            targetSales = db.sales.filter(s => s.id === selectedSummaryBoxId);
+            const sale = targetSales[0];
+            if (sale) titleEl.innerText = `📦 Caja: ${sale.title} (${sale.date})`;
+        } else {
+            titleEl.innerText = "🌐 Consolidado Global (Todas las Ventas)";
         }
 
         let totalQty = 0;
@@ -1558,7 +1915,7 @@
         let totalGastos = 0;
 
         targetSales.forEach(s => {
-            const orders = db.orders.filter(o => o.saleId === s.id);
+            const orders = db.orders.filter(o => o.saleId === s.id && o.status !== 'Cancelado');
             const expenses = db.expenses.filter(e => e.saleId === s.id);
 
             orders.forEach(o => {
@@ -1574,14 +1931,14 @@
         const gananciaNeta = totalBruto - totalGastos;
 
         container.innerHTML = `
-            <div style="background:var(--beige-dark); border-radius:8px; padding:12px;">
-                <div style="display:flex; justify-content:space-between; padding:4px 0;"><span>Total de Eventos / Ventas:</span> <b>${targetSales.length}</b></div>
-                <div style="display:flex; justify-content:space-between; padding:4px 0;"><span>Cantidad de Productos Vendidos:</span> <b>${totalQty} pzs</b></div>
-                <div style="display:flex; justify-content:space-between; padding:4px 0;"><span>Total de Ventas Brutas:</span> <b>$${totalBruto.toFixed(2)}</b></div>
-                <div style="display:flex; justify-content:space-between; padding:4px 0;"><span>Dinero Cobrado en Caja:</span> <b style="color:var(--accent-success);">$${totalCobrado.toFixed(2)}</b></div>
-                <div style="display:flex; justify-content:space-between; padding:4px 0;"><span>Deudas por Cobrar:</span> <b style="color:var(--accent-danger);">$${totalDeudas.toFixed(2)}</b></div>
-                <div style="display:flex; justify-content:space-between; padding:4px 0;"><span>Gastos Totales:</span> <b style="color:var(--accent-warning);">$${totalGastos.toFixed(2)}</b></div>
-                <div style="display:flex; justify-content:space-between; padding:8px 0; border-top:1px solid var(--card-border); font-weight:bold; font-size:1.05rem; margin-top:5px; color:var(--primary);"><span>GANANCIA NETA TOTAL:</span> <b>$${gananciaNeta.toFixed(2)}</b></div>
+            <div style="background:var(--beige-dark); border-radius:8px; padding:15px;">
+                <div style="display:flex; justify-content:space-between; padding:5px 0;"><span>Total de Cajas / Ventas:</span> <b>${targetSales.length}</b></div>
+                <div style="display:flex; justify-content:space-between; padding:5px 0;"><span>Productos Vendidos:</span> <b>${totalQty} pzs</b></div>
+                <div style="display:flex; justify-content:space-between; padding:5px 0;"><span>Ventas Brutas Totales:</span> <b>$${totalBruto.toFixed(2)}</b></div>
+                <div style="display:flex; justify-content:space-between; padding:5px 0;"><span>Cobrado en Caja:</span> <b style="color:var(--accent-success);">$${totalCobrado.toFixed(2)}</b></div>
+                <div style="display:flex; justify-content:space-between; padding:5px 0;"><span>Deudas por Cobrar:</span> <b style="color:var(--accent-danger);">$${totalDeudas.toFixed(2)}</b></div>
+                <div style="display:flex; justify-content:space-between; padding:5px 0;"><span>Gastos Totales:</span> <b style="color:var(--accent-warning);">$${totalGastos.toFixed(2)}</b></div>
+                <div style="display:flex; justify-content:space-between; padding:10px 0; border-top:1px solid var(--card-border); font-weight:bold; font-size:1.1rem; margin-top:5px; color:var(--primary);"><span>GANANCIA NETA EN CAJA:</span> <b>$${gananciaNeta.toFixed(2)}</b></div>
             </div>
         `;
     }
