@@ -6,6 +6,9 @@
     <title>Sistema de Ventas GeriZim v8</title>
     <!-- Librería para generar imagen de ticket e informes -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <!-- Librería para generar PDF e informes en tablas -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
     <style>
         :root {
             --primary: #5c4033;
@@ -228,10 +231,33 @@
             cursor: pointer;
             border-bottom: 3px solid transparent;
             white-space: nowrap;
-            font-size: 0.8rem;
+            font-size: 0.85rem;
         }
         .tab-btn.active {
             color: var(--primary);
+            border-color: var(--primary);
+        }
+
+        .sub-tab-bar {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+            border-bottom: 1px solid var(--card-border);
+            padding-bottom: 8px;
+        }
+        .sub-tab-btn {
+            padding: 6px 12px;
+            border-radius: 20px;
+            background: var(--beige-dark);
+            border: 1px solid var(--card-border);
+            color: var(--text);
+            font-size: 0.8rem;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .sub-tab-btn.active {
+            background: var(--primary);
+            color: white;
             border-color: var(--primary);
         }
 
@@ -383,7 +409,6 @@
             to { transform: translateX(0); opacity: 1; }
         }
 
-        /* REJILLA DE CAJAS (2 A 3 POR FILA EN PANTALLA ANCHA) */
         .box-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
@@ -508,25 +533,43 @@
                 <button class="btn-config" style="background:var(--primary-dark); padding:6px 10px;" onclick="verifyPinAndEditSale()">✏️ Editar Venta</button>
             </div>
 
-            <div style="display: flex; gap: 8px; margin-bottom: 15px; flex-wrap: wrap;">
+            <div style="display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap;">
                 <button class="btn-main btn-success" style="flex: 1; min-width: 140px; padding: 10px;" onclick="openNewOrderModal()">➕ Nuevo Pedido</button>
                 <button class="btn-config" style="background: var(--secondary); color: white; padding: 8px;" onclick="openExpensesModal()">💸 Gastos</button>
                 <button class="btn-config" style="background: var(--primary); color: white; padding: 8px;" onclick="showCurrentSaleReport()">📋 Informe</button>
             </div>
 
-            <!-- TABS CON FLUJO Y CONTADORES -->
+            <!-- BUSCADOR DE PERSONAS EN LOS PEDIDOS -->
+            <div class="form-group" style="margin-bottom: 12px;">
+                <input type="text" id="orderSearchInput" class="form-control" placeholder="🔎 Buscar cliente en pedidos..." oninput="renderOrdersList()">
+            </div>
+
+            <!-- TABS ORGANIZADOS EN: EN TURNO, ENTREGADOS, MULTIPLES (≥2) Y CANCELADOS -->
             <div class="tab-bar">
-                <button class="tab-btn active" onclick="switchOrderTab('orders')">📋 Turno / Despacho (<span id="countOrders">0</span>)</button>
-                <button class="tab-btn" onclick="switchOrderTab('unpaid')">🔴 No Pagados (<span id="countUnpaid">0</span>)</button>
-                <button class="tab-btn" onclick="switchOrderTab('paid')">🟢 Abonados/Pagados (<span id="countPaid">0</span>)</button>
-                <button class="tab-btn" onclick="switchOrderTab('delivered')">📦 Entregados (<span id="countDelivered">0</span>)</button>
+                <button class="tab-btn active" onclick="switchOrderTab('turno')">📋 En Turno (<span id="countOrders">0</span>)</button>
+                <button class="tab-btn" onclick="switchOrderTab('entregados')">📦 Entregados (<span id="countDelivered">0</span>)</button>
+                <button class="tab-btn" onclick="switchOrderTab('multiple')">👥 Pedidos Múltiples (<span id="countMultiple">0</span>)</button>
                 <button class="tab-btn" onclick="switchOrderTab('cancelled')">❌ Cancelados (<span id="countCancelled">0</span>)</button>
             </div>
 
             <div id="listAllOrders"></div>
-            <div id="listUnpaidOrders" style="display: none;"></div>
-            <div id="listPaidOrders" style="display: none;"></div>
-            <div id="listDeliveredOrders" style="display: none;"></div>
+            
+            <!-- CONTENEDOR ENTREGADOS CON SUBPESTAÑAS -->
+            <div id="listDeliveredOrders" style="display: none;">
+                <div class="sub-tab-bar">
+                    <button class="sub-tab-btn active" onclick="switchSubTab('subDebe')">🔴 No Pagados (<span id="countSubDebe">0</span>)</button>
+                    <button class="sub-tab-btn" onclick="switchSubTab('subAbono')">🟡 Abonó (<span id="countSubAbono">0</span>)</button>
+                    <button class="sub-tab-btn" onclick="switchSubTab('subPagado')">🟢 Pagado (<span id="countSubPagado">0</span>)</button>
+                </div>
+
+                <div id="subContainerDebe"></div>
+                <div id="subContainerAbono" style="display: none;"></div>
+                <div id="subContainerPagado" style="display: none;"></div>
+            </div>
+
+            <!-- CONTENEDOR DE CLIENTES CON MÁS DE 2 PEDIDOS -->
+            <div id="listMultipleOrders" style="display: none;"></div>
+
             <div id="listCancelledOrders" style="display: none;"></div>
         </div>
 
@@ -683,9 +726,15 @@
             <button class="btn-main btn-success" style="width:100%; padding:10px; font-size:0.9rem;" onclick="sendOrderReceivedWhatsApp()">📲 Confirmar Pedido por WhatsApp</button>
         </div>
 
+        <!-- SECCIÓN DE ABONAR CON FECHA SELECCIONABLE -->
         <div style="background: var(--beige-dark); padding: 12px; border-radius: 8px; margin-bottom: 15px;">
             <h4 style="margin-bottom: 8px; color: var(--primary);">💰 Registrar Nuevo Abono / Liquidar</h4>
             <div class="form-group" style="margin-bottom: 8px;">
+                <label style="font-size:0.8rem; margin-bottom:2px;">Fecha del Abono / Pago:</label>
+                <input type="date" id="newAbonoDate" class="form-control" style="padding:6px 10px; font-size:0.9rem;">
+            </div>
+            <div class="form-group" style="margin-bottom: 8px;">
+                <label style="font-size:0.8rem; margin-bottom:2px;">Monto Abonado ($):</label>
                 <input type="number" id="newAbonoAmount" class="form-control" placeholder="Monto a abonar $" step="0.5" min="0.5">
             </div>
             <button type="button" class="btn-main btn-success" style="width: 100%; padding: 8px; font-size: 0.9rem;" onclick="handleSaveNewAbono()">➕ Agregar Abono</button>
@@ -762,7 +811,7 @@
     </div>
 </div>
 
-<!-- MODAL INFORME CON CAPTURA -->
+<!-- MODAL INFORME CON CAPTURA Y PDF -->
 <div id="modalReport" class="modal">
     <div class="modal-content">
         <h3 id="reportTitle" style="color: var(--primary); text-align:center;">Informe de Venta</h3>
@@ -775,6 +824,7 @@
         </div>
 
         <div style="display:flex; flex-direction:column; gap:8px;">
+            <button class="btn-main btn-success" onclick="exportarInformePDF()">📄 Descargar PDF de Informe Completo</button>
             <button class="btn-main btn-primary" onclick="downloadReportImage()">📸 Descargar Imagen de Informe</button>
             <button class="btn-main btn-secondary" onclick="closeModal('modalReport')">Cerrar</button>
         </div>
@@ -847,7 +897,7 @@
         const theme = localStorage.getItem('gerisin_theme');
         if (theme === 'dark') {
             document.body.classList.add('dark-mode');
-            document.getElementById('themeIcon').innerText = '☀️';
+            document.getElementById('themeIcon').innerText = '☀️️';
             document.getElementById('themeText').innerText = 'Claro';
         }
     }
@@ -1274,6 +1324,7 @@
                 order.status = status;
                 order.abono = abono;
                 order.debt = debt;
+                order.datetime = nowStr;
                 syncItem({ type: 'ORDER', ...order });
             }
         } else {
@@ -1341,6 +1392,9 @@
 
         document.getElementById('actionModalClientInfo').innerText = `${order.client} - Pendiente: $${order.debt.toFixed(2)} (${order.status})`;
         document.getElementById('newAbonoAmount').value = '';
+        
+        const todayIso = new Date().toISOString().split('T')[0];
+        document.getElementById('newAbonoDate').value = todayIso;
 
         document.getElementById('tkDate').innerText = order.datetime || new Date().toLocaleString();
         document.getElementById('tkClient').innerText = order.client;
@@ -1373,6 +1427,7 @@
     function handleSaveNewAbono() {
         if (!selectedOrderForAction) return;
         const addAmount = parseFloat(document.getElementById('newAbonoAmount').value) || 0;
+        const selectedDateVal = document.getElementById('newAbonoDate').value;
         const { order } = selectedOrderForAction;
 
         if (addAmount > 0 && order.status !== 'Cancelado') {
@@ -1383,6 +1438,14 @@
                 order.status = 'Pagado';
             } else {
                 order.status = 'Abonó';
+            }
+
+            const nowTime = new Date().toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
+            if (selectedDateVal) {
+                const dateParts = selectedDateVal.split('-');
+                order.datetime = `${dateParts[2]}/${dateParts[1]}/${dateParts[0]} ${nowTime}`;
+            } else {
+                order.datetime = new Date().toLocaleDateString('es-MX') + ' ' + nowTime;
             }
 
             saveLocalStorage();
@@ -1404,26 +1467,40 @@
     function switchOrderTab(tab) {
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         document.getElementById('listAllOrders').style.display = 'none';
-        document.getElementById('listUnpaidOrders').style.display = 'none';
-        document.getElementById('listPaidOrders').style.display = 'none';
         document.getElementById('listDeliveredOrders').style.display = 'none';
+        document.getElementById('listMultipleOrders').style.display = 'none';
         document.getElementById('listCancelledOrders').style.display = 'none';
 
-        if (tab === 'orders') {
+        if (tab === 'turno') {
             document.querySelectorAll('.tab-btn')[0].classList.add('active');
             document.getElementById('listAllOrders').style.display = 'block';
-        } else if (tab === 'unpaid') {
+        } else if (tab === 'entregados') {
             document.querySelectorAll('.tab-btn')[1].classList.add('active');
-            document.getElementById('listUnpaidOrders').style.display = 'block';
-        } else if (tab === 'paid') {
-            document.querySelectorAll('.tab-btn')[2].classList.add('active');
-            document.getElementById('listPaidOrders').style.display = 'block';
-        } else if (tab === 'delivered') {
-            document.querySelectorAll('.tab-btn')[3].classList.add('active');
             document.getElementById('listDeliveredOrders').style.display = 'block';
+        } else if (tab === 'multiple') {
+            document.querySelectorAll('.tab-btn')[2].classList.add('active');
+            document.getElementById('listMultipleOrders').style.display = 'block';
         } else {
-            document.querySelectorAll('.tab-btn')[4].classList.add('active');
+            document.querySelectorAll('.tab-btn')[3].classList.add('active');
             document.getElementById('listCancelledOrders').style.display = 'block';
+        }
+    }
+
+    function switchSubTab(sub) {
+        document.querySelectorAll('.sub-tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById('subContainerDebe').style.display = 'none';
+        document.getElementById('subContainerAbono').style.display = 'none';
+        document.getElementById('subContainerPagado').style.display = 'none';
+
+        if (sub === 'subDebe') {
+            document.querySelectorAll('.sub-tab-btn')[0].classList.add('active');
+            document.getElementById('subContainerDebe').style.display = 'block';
+        } else if (sub === 'subAbono') {
+            document.querySelectorAll('.sub-tab-btn')[1].classList.add('active');
+            document.getElementById('subContainerAbono').style.display = 'block';
+        } else {
+            document.querySelectorAll('.sub-tab-btn')[2].classList.add('active');
+            document.getElementById('subContainerPagado').style.display = 'block';
         }
     }
 
@@ -1526,38 +1603,191 @@
         window.open(url, '_blank');
     }
 
-    // RENDERIZADO DE PEDIDOS ORDENADOS DEL MÁS ANTIGUO AL MÁS RECIENTE (ORDEN DE LLEGADA)
+    function exportarInformePDF() {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        
+        const sale = db.sales.find(s => s.id === currentSaleId);
+        const orders = db.orders.filter(o => o.saleId === currentSaleId);
+        const activeOrders = orders.filter(o => o.status !== 'Cancelado');
+        const expenses = db.expenses.filter(e => e.saleId === currentSaleId);
+
+        let totalBruto = 0, totalCobrado = 0, totalDeudas = 0, totalGastos = 0, totalPiezas = 0;
+        activeOrders.forEach(o => {
+            totalBruto += o.total;
+            totalCobrado += o.abono;
+            totalDeudas += o.debt;
+            totalPiezas += o.qty;
+        });
+        expenses.forEach(e => totalGastos += e.amount);
+        const gananciaNeta = totalBruto - totalGastos;
+
+        // ENCABEZADO PRINCIPAL
+        doc.setFontSize(16);
+        doc.text(`INFORME DE VENTA - ${sale ? sale.title.toUpperCase() : 'GERIZIM'}`, 14, 15);
+        doc.setFontSize(10);
+        doc.text(`Fecha del Evento: ${sale ? sale.date : ''} | Generado: ${new Date().toLocaleString()}`, 14, 22);
+
+        // TABLA FINANCIERA GENERAL Y TOTAL DE PIEZAS
+        doc.autoTable({
+            startY: 28,
+            head: [['Concepto General', 'Cantidad / Monto']],
+            body: [
+                ['Total de Piezas Vendidas', `${totalPiezas} pzs`],
+                ['Ventas Brutas Totales', `$${totalBruto.toFixed(2)}`],
+                ['Ingresos Cobrados (Efectivo/Abonos)', `$${totalCobrado.toFixed(2)}`],
+                ['Deudas por Cobrar (Pendiente)', `$${totalDeudas.toFixed(2)}`],
+                ['Egresos / Gastos Totales', `$${totalGastos.toFixed(2)}`],
+                ['GANANCIA NETA', `$${gananciaNeta.toFixed(2)}`]
+            ],
+            theme: 'striped',
+            headStyles: { fillColor: [92, 64, 51] }
+        });
+
+        let currentY = doc.lastAutoTable.finalY + 10;
+
+        // AGRUPAMIENTO POR CLIENTES (3+ PEDIDOS vs 2 PEDIDOS)
+        const groupedClients = {};
+        activeOrders.forEach(o => {
+            const key = o.client.toLowerCase().trim();
+            if (!groupedClients[key]) {
+                groupedClients[key] = { name: o.client, ordersCount: 0, totalQty: 0, totalAmount: 0, totalDebt: 0 };
+            }
+            groupedClients[key].ordersCount += 1;
+            groupedClients[key].totalQty += o.qty;
+            groupedClients[key].totalAmount += o.total;
+            groupedClients[key].totalDebt += o.debt;
+        });
+
+        const list3OrMore = Object.values(groupedClients).filter(c => c.ordersCount >= 3);
+        const list2Orders = Object.values(groupedClients).filter(c => c.ordersCount === 2);
+
+        // SUBSECCIÓN 1: CLIENTES CON 3 O MÁS PEDIDOS
+        const subPzs3 = list3OrMore.reduce((sum, c) => sum + c.totalQty, 0);
+        const subMonto3 = list3OrMore.reduce((sum, c) => sum + c.totalAmount, 0);
+
+        doc.setFontSize(12);
+        doc.text(`1. DESGLOSE CLIENTES CON 3+ PEDIDOS (Subtotal: ${subPzs3} pzs | $${subMonto3.toFixed(2)})`, 14, currentY);
+        doc.autoTable({
+            startY: currentY + 4,
+            head: [['Cliente', 'N° Pedidos', 'Piezas Totales', 'Monto Total', 'Deuda Total']],
+            body: list3OrMore.length > 0 ? list3OrMore.map(c => [
+                c.name,
+                `${c.ordersCount} pedidos`,
+                `${c.totalQty} pzs`,
+                `$${c.totalAmount.toFixed(2)}`,
+                `$${c.totalDebt.toFixed(2)}`
+            ]) : [['Sin clientes con 3+ pedidos', '-', '-', '-', '-']],
+            headStyles: { fillColor: [56, 102, 65] }
+        });
+
+        currentY = doc.lastAutoTable.finalY + 8;
+
+        // SUBSECCIÓN 2: CLIENTES CON EXACTAMENTE 2 PEDIDOS
+        const subPzs2 = list2Orders.reduce((sum, c) => sum + c.totalQty, 0);
+        const subMonto2 = list2Orders.reduce((sum, c) => sum + c.totalAmount, 0);
+
+        doc.setFontSize(12);
+        doc.text(`2. DESGLOSE CLIENTES CON 2 PEDIDOS (Subtotal: ${subPzs2} pzs | $${subMonto2.toFixed(2)})`, 14, currentY);
+        doc.autoTable({
+            startY: currentY + 4,
+            head: [['Cliente', 'N° Pedidos', 'Piezas Totales', 'Monto Total', 'Deuda Total']],
+            body: list2Orders.length > 0 ? list2Orders.map(c => [
+                c.name,
+                `${c.ordersCount} pedidos`,
+                `${c.totalQty} pzs`,
+                `$${c.totalAmount.toFixed(2)}`,
+                `$${c.totalDebt.toFixed(2)}`
+            ]) : [['Sin clientes con 2 pedidos', '-', '-', '-', '-']],
+            headStyles: { fillColor: [181, 101, 118] }
+        });
+
+        currentY = doc.lastAutoTable.finalY + 8;
+
+        // SUBSECCIÓN 3: GASTOS REALIZADOS
+        doc.setFontSize(12);
+        doc.text(`3. DESGLOSE DE GASTOS / EGRESOS (Subtotal: $${totalGastos.toFixed(2)})`, 14, currentY);
+        doc.autoTable({
+            startY: currentY + 4,
+            head: [['#', 'Descripción del Gasto', 'Monto ($)']],
+            body: expenses.length > 0 ? expenses.map((e, idx) => [
+                idx + 1,
+                e.desc,
+                `$${e.amount.toFixed(2)}`
+            ]) : [['-', 'Sin gastos registrados', '$0.00']],
+            headStyles: { fillColor: [154, 3, 30] }
+        });
+
+        doc.save(`Informe_${sale ? sale.title : 'Venta'}_${Date.now()}.pdf`);
+    }
+
     function renderOrdersList() {
         const allContainer = document.getElementById('listAllOrders');
-        const unpaidContainer = document.getElementById('listUnpaidOrders');
-        const paidContainer = document.getElementById('listPaidOrders');
-        const deliveredContainer = document.getElementById('listDeliveredOrders');
         const cancelledContainer = document.getElementById('listCancelledOrders');
+        const multipleContainer = document.getElementById('listMultipleOrders');
+        const filterText = (document.getElementById('orderSearchInput') ? document.getElementById('orderSearchInput').value : '').toLowerCase().trim();
 
-        // Orden cronológico inverso (Del más antiguo al más reciente)
-        const activeOrders = db.orders.filter(o => o.saleId === currentSaleId)
+        let activeOrders = db.orders.filter(o => o.saleId === currentSaleId)
             .sort((a, b) => {
                 const timeA = a.timestamp || parseInt(a.id.replace('ORD_', '')) || 0;
                 const timeB = b.timestamp || parseInt(b.id.replace('ORD_', '')) || 0;
                 return timeA - timeB;
             });
 
-        const allOrders = activeOrders.filter(o => o.status !== 'Cancelado');
-        const unpaid = activeOrders.filter(o => !o.delivered && o.debt > 0 && o.status !== 'Cancelado');
-        const paid = activeOrders.filter(o => !o.delivered && o.debt === 0 && o.status !== 'Cancelado');
-        const delivered = activeOrders.filter(o => o.delivered && o.status !== 'Cancelado');
-        const cancelled = activeOrders.filter(o => o.status === 'Cancelado');
+        // Filtro por nombre o teléfono
+        if (filterText) {
+            activeOrders = activeOrders.filter(o => 
+                (o.client && o.client.toLowerCase().includes(filterText)) ||
+                (o.phone && o.phone.includes(filterText))
+            );
+        }
 
-        document.getElementById('countOrders').innerText = allOrders.length;
-        document.getElementById('countUnpaid').innerText = unpaid.length;
-        document.getElementById('countPaid').innerText = paid.length;
-        document.getElementById('countDelivered').innerText = delivered.length;
-        document.getElementById('countCancelled').innerText = cancelled.length;
+        const enTurno = activeOrders.filter(o => !o.delivered && o.status !== 'Cancelado');
+        const entregados = activeOrders.filter(o => o.delivered && o.status !== 'Cancelado');
+        const cancelados = activeOrders.filter(o => o.status === 'Cancelado');
 
-        const sumAll = allOrders.reduce((sum, o) => sum + o.total, 0);
-        const sumUnpaid = unpaid.reduce((sum, o) => sum + o.debt, 0);
-        const sumPaid = paid.reduce((sum, o) => sum + o.total, 0);
-        const sumDelivered = delivered.reduce((sum, o) => sum + o.total, 0);
+        const entregadosDebe = entregados.filter(o => o.status === 'Debe');
+        const entregadosAbono = entregados.filter(o => o.status === 'Abonó');
+        const entregadosPagado = entregados.filter(o => o.status === 'Pagado');
+
+        // CÁLCULO DE TOTALES Y SUBTOTALES DE PIEZAS Y DINERO
+        const sumTurnoPzs = enTurno.reduce((sum, o) => sum + o.qty, 0);
+        const sumTurnoMonto = enTurno.reduce((sum, o) => sum + o.total, 0);
+
+        const sumDebePzs = entregadosDebe.reduce((sum, o) => sum + o.qty, 0);
+        const sumDebeMonto = entregadosDebe.reduce((sum, o) => sum + o.total, 0);
+
+        const sumAbonoPzs = entregadosAbono.reduce((sum, o) => sum + o.qty, 0);
+        const sumAbonoMonto = entregadosAbono.reduce((sum, o) => sum + o.total, 0);
+
+        const sumPagadoPzs = entregadosPagado.reduce((sum, o) => sum + o.qty, 0);
+        const sumPagadoMonto = entregadosPagado.reduce((sum, o) => sum + o.total, 0);
+
+        // AGRUPAMIENTO DE CLIENTES (3 o más pedidos vs 2 pedidos)
+        const groupedClients = {};
+        db.orders.filter(o => o.saleId === currentSaleId && o.status !== 'Cancelado').forEach(o => {
+            const key = o.client.toLowerCase().trim();
+            if (!groupedClients[key]) {
+                groupedClients[key] = { name: o.client, orders: [], totalQty: 0, totalAmount: 0, totalDebt: 0 };
+            }
+            groupedClients[key].orders.push(o);
+            groupedClients[key].totalQty += o.qty;
+            groupedClients[key].totalAmount += o.total;
+            groupedClients[key].totalDebt += o.debt;
+        });
+
+        const keys3OrMore = Object.keys(groupedClients).filter(k => groupedClients[k].orders.length >= 3);
+        const keys2Orders = Object.keys(groupedClients).filter(k => groupedClients[k].orders.length === 2);
+
+        // Actualizar badges e indicadores
+        if (document.getElementById('countOrders')) document.getElementById('countOrders').innerText = enTurno.length;
+        if (document.getElementById('countDelivered')) document.getElementById('countDelivered').innerText = entregados.length;
+        if (document.getElementById('countMultiple')) document.getElementById('countMultiple').innerText = keys3OrMore.length + keys2Orders.length;
+        if (document.getElementById('countCancelled')) document.getElementById('countCancelled').innerText = cancelados.length;
+
+        if (document.getElementById('countSubDebe')) document.getElementById('countSubDebe').innerText = entregadosDebe.length;
+        if (document.getElementById('countSubAbono')) document.getElementById('countSubAbono').innerText = entregadosAbono.length;
+        if (document.getElementById('countSubPagado')) document.getElementById('countSubPagado').innerText = entregadosPagado.length;
 
         const renderCard = (o, index) => {
             let badgeClass = 'badge-success';
@@ -1575,7 +1805,7 @@
                         <div>📦 Pedido: <b>${o.qty} pzs</b> ($${o.total.toFixed(2)})</div>
                         <div>💵 Abonado: $${o.abono.toFixed(2)} | Pendiente: <b style="color:var(--accent-danger);">$${o.debt.toFixed(2)}</b></div>
                         ${o.phone ? `<div>📱 Tel: ${o.phone}</div>` : ''}
-                        <div style="font-size:0.75rem; color:var(--text-light); margin-top:2px;">🕒 Capturado: <b>${o.datetime || 'Sin fecha'}</b></div>
+                        <div style="font-size:0.75rem; color:var(--text-light); margin-top:2px;">🕒 Fecha: <b>${o.datetime || 'Sin fecha'}</b></div>
                     </div>
                     <div class="card-actions">
                         ${o.status !== 'Cancelado' ? `
@@ -1603,20 +1833,98 @@
             `;
         };
 
-        allContainer.innerHTML = `<div class="category-summary"><span>Total de Pedidos en Turno:</span> <span>$${sumAll.toFixed(2)}</span></div>` +
-            (allOrders.length ? allOrders.map((o, idx) => renderCard(o, idx)).join('') : '<p style="color:#6e6057;">No hay pedidos en esta venta.</p>');
+        // 1. PESTAÑA EN TURNO
+        allContainer.innerHTML = `<div class="category-summary"><span>Subtotal en Turno: ${sumTurnoPzs} pzs</span> <span>$${sumTurnoMonto.toFixed(2)}</span></div>` +
+            (enTurno.length ? enTurno.map((o, idx) => renderCard(o, idx)).join('') : '<p style="color:#6e6057;">No hay pedidos pendientes en turno.</p>');
 
-        unpaidContainer.innerHTML = `<div class="category-summary"><span>Total por Cobrar (Deudas):</span> <span>$${sumUnpaid.toFixed(2)}</span></div>` +
-            (unpaid.length ? unpaid.map((o, idx) => renderCard(o, idx)).join('') : '<p style="color:#6e6057;">No hay pedidos pendientes de pago.</p>');
+        // 2. SUBPESTAÑAS ENTREGADOS
+        const elemSubDebe = document.getElementById('subContainerDebe');
+        const elemSubAbono = document.getElementById('subContainerAbono');
+        const elemSubPagado = document.getElementById('subContainerPagado');
 
-        paidContainer.innerHTML = `<div class="category-summary"><span>Total Cobrado (Completos):</span> <span>$${sumPaid.toFixed(2)}</span></div>` +
-            (paid.length ? paid.map((o, idx) => renderCard(o, idx)).join('') : '<p style="color:#6e6057;">No hay pedidos pagados pendientes de entrega.</p>');
+        if (elemSubDebe) {
+            elemSubDebe.innerHTML = `<div class="category-summary" style="background:#fce8e6; color:var(--accent-danger);"><span>Subtotal No Pagados: ${sumDebePzs} pzs</span> <span>$${sumDebeMonto.toFixed(2)}</span></div>` +
+                (entregadosDebe.length ? entregadosDebe.map((o, idx) => renderCard(o, idx)).join('') : '<p style="color:#6e6057; font-size:0.85rem; padding:10px 0;">No hay pedidos entregados sin pagar.</p>');
+        }
 
-        deliveredContainer.innerHTML = `<div class="category-summary"><span>Total Pedidos Entregados:</span> <span>$${sumDelivered.toFixed(2)}</span></div>` +
-            (delivered.length ? delivered.map((o, idx) => renderCard(o, idx)).join('') : '<p style="color:#6e6057;">No hay pedidos entregados.</p>');
+        if (elemSubAbono) {
+            elemSubAbono.innerHTML = `<div class="category-summary" style="background:#fff3cd; color:#856404;"><span>Subtotal Abonados: ${sumAbonoPzs} pzs</span> <span>$${sumAbonoMonto.toFixed(2)}</span></div>` +
+                (entregadosAbono.length ? entregadosAbono.map((o, idx) => renderCard(o, idx)).join('') : '<p style="color:#6e6057; font-size:0.85rem; padding:10px 0;">No hay pedidos entregados abonados.</p>');
+        }
 
-        cancelledContainer.innerHTML = `<div class="category-summary"><span>Total Cancelados:</span> <span>${cancelled.length} pedidos</span></div>` +
-            (cancelled.length ? cancelled.map((o, idx) => renderCard(o, idx)).join('') : '<p style="color:#6e6057;">No hay pedidos cancelados.</p>');
+        if (elemSubPagado) {
+            elemSubPagado.innerHTML = `<div class="category-summary" style="background:#e8f5e9; color:var(--accent-success);"><span>Subtotal Pagados: ${sumPagadoPzs} pzs</span> <span>$${sumPagadoMonto.toFixed(2)}</span></div>` +
+                (entregadosPagado.length ? entregadosPagado.map((o, idx) => renderCard(o, idx)).join('') : '<p style="color:#6e6057; font-size:0.85rem; padding:10px 0;">No hay pedidos entregados totalmente pagados.</p>');
+        }
+
+        // 3. PESTAÑA PEDIDOS MÚLTIPLES (GRUPO 3+ Y GRUPO 2 PEDIDOS)
+        let multHtml = '';
+
+        // Subtotal Grupo 3+ Pedidos
+        let pzs3Total = 0, monto3Total = 0;
+        keys3OrMore.forEach(k => {
+            pzs3Total += groupedClients[k].totalQty;
+            monto3Total += groupedClients[k].totalAmount;
+        });
+
+        multHtml += `<h4 style="color:var(--primary); margin:10px 0 6px 0;">🔥 Clientes con 3 o más Pedidos (${keys3OrMore.length})</h4>`;
+        multHtml += `<div class="category-summary"><span>Subtotal (3+ Pedidos): ${pzs3Total} pzs</span> <span>$${monto3Total.toFixed(2)}</span></div>`;
+
+        if (keys3OrMore.length === 0) {
+            multHtml += '<p style="color:#6e6057; font-size:0.85rem; margin-bottom:15px;">Sin clientes con 3 o más pedidos.</p>';
+        } else {
+            keys3OrMore.forEach(k => {
+                const group = groupedClients[k];
+                multHtml += `
+                    <div class="card" style="border-left: 4px solid var(--accent-success);">
+                        <div class="card-header">
+                            <span class="card-title">👤 ${group.name}</span>
+                            <span class="badge badge-success">${group.orders.length} Pedidos</span>
+                        </div>
+                        <div class="card-body">
+                            <div>📦 Subtotal Cliente: <b>${group.totalQty} pzs</b> ($${group.totalAmount.toFixed(2)})</div>
+                            <div>💵 Saldo Deuda: <b style="color:var(--accent-danger);">$${group.totalDebt.toFixed(2)}</b></div>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        // Subtotal Grupo 2 Pedidos
+        let pzs2Total = 0, monto2Total = 0;
+        keys2Orders.forEach(k => {
+            pzs2Total += groupedClients[k].totalQty;
+            monto2Total += groupedClients[k].totalAmount;
+        });
+
+        multHtml += `<h4 style="color:var(--primary); margin:15px 0 6px 0;">👥 Clientes con 2 Pedidos (${keys2Orders.length})</h4>`;
+        multHtml += `<div class="category-summary"><span>Subtotal (2 Pedidos): ${pzs2Total} pzs</span> <span>$${monto2Total.toFixed(2)}</span></div>`;
+
+        if (keys2Orders.length === 0) {
+            multHtml += '<p style="color:#6e6057; font-size:0.85rem;">Sin clientes con 2 pedidos.</p>';
+        } else {
+            keys2Orders.forEach(k => {
+                const group = groupedClients[k];
+                multHtml += `
+                    <div class="card" style="border-left: 4px solid var(--primary);">
+                        <div class="card-header">
+                            <span class="card-title">👤 ${group.name}</span>
+                            <span class="badge badge-warning">${group.orders.length} Pedidos</span>
+                        </div>
+                        <div class="card-body">
+                            <div>📦 Subtotal Cliente: <b>${group.totalQty} pzs</b> ($${group.totalAmount.toFixed(2)})</div>
+                            <div>💵 Saldo Deuda: <b style="color:var(--accent-danger);">$${group.totalDebt.toFixed(2)}</b></div>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        if (multipleContainer) multipleContainer.innerHTML = multHtml;
+
+        // 4. CANCELADOS
+        cancelledContainer.innerHTML = `<div class="category-summary"><span>Total Cancelados:</span> <span>${cancelados.length} pedidos</span></div>` +
+            (cancelados.length ? cancelados.map((o, idx) => renderCard(o, idx)).join('') : '<p style="color:#6e6057;">No hay pedidos cancelados.</p>');
     }
 
     function openExpensesModal() {
@@ -1792,7 +2100,7 @@
                                 💰 Abonar / Liquidar
                             </button>
                             <button class="btn-main btn-secondary" style="padding:4px 8px; font-size:0.75rem;" onclick="editOrder('${item.orderId}')">
-                                ✏️ Editar
+                                ✏️️ Editar
                             </button>
                         </div>
                     </div>
